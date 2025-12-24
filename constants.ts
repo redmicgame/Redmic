@@ -8,6 +8,7 @@ export const INITIAL_MONEY = 100000;
 export const GENRES = ['Pop', 'Hip Hop', 'R&B', 'Rock', 'Electronic', 'Indie', 'Country', 'Christmas'];
 
 export const STUDIOS = [
+    { name: 'Voice Memos', cost: 0, qualityRange: [1, 5] },
     { name: 'Bedroom Studio', cost: 5000, qualityRange: [10, 50] },
     { name: 'Local Studio', cost: 20000, qualityRange: [30, 70] },
     { name: 'Pro Studio', cost: 80000, qualityRange: [50, 90] },
