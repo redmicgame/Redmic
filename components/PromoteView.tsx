@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import { PROMOTION_PACKAGES, LABELS, TIER_LEVELS } from '../constants';
@@ -262,7 +263,7 @@ const PromoteView: React.FC = () => {
         <>
             {isSongModalOpen && (
                 <PromotionModal
-                    title={`Promote ${selectedSongIds.size} Songs`}
+                    title={`Payola for ${selectedSongIds.size} Songs`}
                     packages={availableSongPackages}
                     onClose={() => setIsSongModalOpen(false)}
                     onSelectPackage={handleSelectPackageForSongs}
@@ -272,7 +273,7 @@ const PromoteView: React.FC = () => {
             )}
             {selectedSingleItem && (
                  <PromotionModal
-                    title={`Promote "${selectedSingleItem.item.title}"`}
+                    title={`Payola for "${selectedSingleItem.item.title}"`}
                     packages={selectedSingleItem.type === 'video' ? PROMOTION_PACKAGES.video : PROMOTION_PACKAGES.resurgence}
                     onClose={() => setSelectedSingleItem(null)}
                     onSelectPackage={handleSelectPackageForSingleItem}
@@ -283,21 +284,21 @@ const PromoteView: React.FC = () => {
                 isOpen={!!confirmCancel}
                 onClose={() => setConfirmCancel(null)}
                 onConfirm={handleConfirmCancel}
-                title="Cancel Promotion?"
-                message="Are you sure you want to cancel this promotion? It will stop at the end of the week."
-                confirmText="Cancel Promotion"
+                title="Cancel Campaign?"
+                message="Are you sure you want to cancel this campaign? It will stop at the end of the week."
+                confirmText="Cancel Campaign"
             />
             <div className="h-screen w-full bg-zinc-900 flex flex-col">
                 <header className="p-4 flex items-center gap-4 sticky top-0 bg-zinc-900/80 backdrop-blur-sm z-10 border-b border-zinc-700/50">
                     <button onClick={() => dispatch({type: 'CHANGE_VIEW', payload: 'game'})} className="p-2 rounded-full hover:bg-white/10">
                         <ArrowLeftIcon className="w-6 h-6" />
                     </button>
-                    <h1 className="text-2xl font-bold">Promote Music</h1>
+                    <h1 className="text-2xl font-bold">Payola</h1>
                 </header>
                 
                 <main className="flex-grow p-4 space-y-6 overflow-y-auto pb-24">
                     <div className="space-y-4">
-                        <h2 className="text-xl font-bold">Active Promotions</h2>
+                        <h2 className="text-xl font-bold">Active Campaigns</h2>
                         {promotions.length > 0 ? (
                             <div className="space-y-2">
                                 {promotions.map(promo => {
@@ -321,11 +322,11 @@ const PromoteView: React.FC = () => {
                                 })}
                             </div>
                         ) : (
-                            <p className="text-sm text-zinc-500 text-center py-4 bg-zinc-800/50 rounded-lg">No active promotions.</p>
+                            <p className="text-sm text-zinc-500 text-center py-4 bg-zinc-800/50 rounded-lg">No active campaigns.</p>
                         )}
                     </div>
                      <div className="space-y-4 pt-6 border-t border-zinc-700">
-                         <h2 className="text-xl font-bold">Start a New Promotion</h2>
+                         <h2 className="text-xl font-bold">Start a New Campaign</h2>
                          <div className="grid grid-cols-3 gap-2">
                             <button onClick={() => setActiveSection('songs')} className={`py-2 px-4 rounded-md text-sm font-semibold transition-colors ${activeSection === 'songs' ? 'bg-red-600 text-white' : 'bg-zinc-700 hover:bg-zinc-600'}`}>Songs</button>
                             <button onClick={() => setActiveSection('videos')} className={`py-2 px-4 rounded-md text-sm font-semibold transition-colors ${activeSection === 'videos' ? 'bg-red-600 text-white' : 'bg-zinc-700 hover:bg-zinc-600'}`}>Videos</button>
@@ -338,7 +339,7 @@ const PromoteView: React.FC = () => {
                 {activeSection === 'songs' && selectedSongIds.size > 0 && (
                     <div className="fixed bottom-0 left-0 right-0 bg-zinc-800/80 backdrop-blur-sm p-4 border-t border-zinc-700 z-20">
                         <button onClick={() => setIsSongModalOpen(true)} className="w-full h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors">
-                            Promote {selectedSongIds.size} Song{selectedSongIds.size > 1 ? 's' : ''}
+                            Pay for {selectedSongIds.size} Song{selectedSongIds.size > 1 ? 's' : ''}
                         </button>
                     </div>
                 )}

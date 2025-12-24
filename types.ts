@@ -1,5 +1,4 @@
 
-
 export interface Artist {
     id: string;
     name: string;
@@ -115,6 +114,20 @@ export interface GeniusOffer {
     emailId: string;
 }
 
+export interface OnTheRadarOffer {
+    type: 'onTheRadarOffer';
+    songId: string;
+    isAccepted: boolean;
+    emailId: string;
+}
+
+export interface TrshdOffer {
+    type: 'trshdOffer';
+    songId: string;
+    isAccepted: boolean;
+    emailId: string;
+}
+
 export interface FallonOffer {
     type: 'fallonOffer';
     releaseId: string;
@@ -188,16 +201,42 @@ export interface TouringDataUpdate {
     venueIndex: number;
 }
 
+export interface VogueOffer {
+    type: 'vogueOffer';
+    magazine: 'Vogue' | 'Vogue Korea' | 'Vogue Italy';
+    isAccepted: boolean;
+    emailId: string;
+}
+
+export interface FeatureOffer {
+    type: 'featureOffer';
+    npcArtistName: string;
+    payout: number;
+    songQuality: number;
+    promotion?: {
+        name: string;
+        durationWeeks: number;
+    };
+    isAccepted: boolean;
+    emailId: string;
+}
+
+export interface FeatureReleaseNotification {
+    type: 'featureRelease';
+    songTitle: string;
+    npcArtistName: string;
+}
+
 
 export interface Email {
     id: string;
     sender: string;
-    senderIcon?: 'spotify' | 'youtube' | 'default' | 'label' | 'genius' | 'fallon' | 'popbase' | 'grammys' | 'x' | 'onlyfans' | 'soundtrack' | 'touringdata' | 'business';
+    senderIcon?: 'spotify' | 'youtube' | 'default' | 'label' | 'genius' | 'fallon' | 'popbase' | 'grammys' | 'x' | 'onlyfans' | 'soundtrack' | 'touringdata' | 'business' | 'vogue' | 'feature' | 'ontheradar' | 'trshd';
     subject: string;
     body: string;
     date: GameDate;
     isRead: boolean;
-    offer?: GeniusOffer | FallonOffer | PopBaseOffer | GrammySubmissionOffer | GrammyNominationOffer | GrammyRedCarpetOffer | LeakNotification | XSuspensionEmail | XAppealResultEmail | OnlyFansOffer | SoundtrackOffer | TouringDataUpdate;
+    offer?: GeniusOffer | FallonOffer | PopBaseOffer | GrammySubmissionOffer | GrammyNominationOffer | GrammyRedCarpetOffer | LeakNotification | XSuspensionEmail | XAppealResultEmail | OnlyFansOffer | SoundtrackOffer | TouringDataUpdate | VogueOffer | FeatureOffer | FeatureReleaseNotification | OnTheRadarOffer | TrshdOffer;
 }
 
 export interface GameDate {
@@ -221,6 +260,13 @@ export interface NpcSong {
     artist: string;
     genre: string;
     basePopularity: number; // A value to derive weekly streams from
+    featuring?: string; // Player artist name
+    isPlayerFeature?: boolean;
+    coverArt?: string;
+    isReleased?: boolean;
+    releaseDate?: GameDate;
+    promotion?: { name: string; boost: number };
+    promoWeeksLeft?: number;
 }
 
 export interface NpcAlbum {
@@ -231,6 +277,20 @@ export interface NpcAlbum {
     coverArt: string;
     songIds: string[]; // uniqueId of NpcSong
     salesPotential: number;
+}
+
+export interface ChartEntry {
+    rank: number;
+    lastWeek: number | null;
+    peak: number;
+    weeksOnChart: number;
+    title: string;
+    artist: string;
+    coverArt: string;
+    isPlayerSong: boolean;
+    songId?: string;
+    uniqueId: string;
+    weeklyStreams: number;
 }
 
 export interface AlbumChartEntry {
@@ -396,7 +456,7 @@ export interface GrammyCategory {
     winner?: GrammyContender;
 }
 
-export type GameView = 'game' | 'spotify' | 'studio' | 'release' | 'pitchfork' | 'youtube' | 'createVideo' | 'merchStore' | 'inbox' | 'catalog' | 'promote' | 'billboard' | 'spotifyChart' | 'youtubeVideoDetail' | 'youtubeStudio' | 'gigs' | 'labelReleasePlan' | 'createGeniusInterview' | 'x' | 'xProfile' | 'xChatDetail' | 'spotifyForArtists' | 'createFallonPerformance' | 'createFallonInterview' | 'spotifyAlbumCountdown' | 'createLabel' | 'albumPromo' | 'billboardAlbums' | 'achievements' | 'redMicProUnlock' | 'redMicProDashboard' | 'wikipedia' | 'grammys' | 'submitForGrammys' | 'createGrammyPerformance' | 'grammyRedCarpet' | 'contractRenewal' | 'itunes' | 'onlyfansSetup' | 'onlyfans' | 'createOnlyFansPost' | 'chartHistory' | 'albumSalesChart' | 'labels' | 'releaseHub' | 'createSoundtrack' | 'spotifySoundtrackDetail' | 'gameGuide' | 'tours' | 'createTour' | 'tourDetail' | 'management' | 'security' | 'spotifyTopSongs' | 'spotifyTopAlbums';
+export type GameView = 'game' | 'spotify' | 'studio' | 'release' | 'pitchfork' | 'youtube' | 'createVideo' | 'merchStore' | 'inbox' | 'catalog' | 'promote' | 'billboard' | 'spotifyChart' | 'youtubeVideoDetail' | 'youtubeStudio' | 'gigs' | 'labelReleasePlan' | 'createGeniusInterview' | 'x' | 'xProfile' | 'xChatDetail' | 'spotifyForArtists' | 'createFallonPerformance' | 'createFallonInterview' | 'spotifyAlbumCountdown' | 'createLabel' | 'albumPromo' | 'billboardAlbums' | 'achievements' | 'redMicProUnlock' | 'redMicProDashboard' | 'wikipedia' | 'grammys' | 'submitForGrammys' | 'createGrammyPerformance' | 'grammyRedCarpet' | 'contractRenewal' | 'itunes' | 'onlyfansSetup' | 'onlyfans' | 'createOnlyFansPost' | 'chartHistory' | 'albumSalesChart' | 'labels' | 'releaseHub' | 'createSoundtrack' | 'spotifySoundtrackDetail' | 'gameGuide' | 'tours' | 'createTour' | 'tourDetail' | 'management' | 'security' | 'spotifyTopSongs' | 'spotifyTopAlbums' | 'createVogueFeature' | 'spotifyWrapped' | 'hotPopSongs' | 'hotRapRnb' | 'electronicChart' | 'countryChart' | 'createFeature' | 'createOnTheRadarPerformance' | 'createTrshdPerformance';
 
 export type Tab = 'Home' | 'Apps' | 'Charts' | 'Misc' | 'Business';
 
@@ -502,6 +562,15 @@ export interface SecurityTeam {
     leakProtection: number;
 }
 
+export interface VoguePhotoshoot {
+    id: string;
+    magazine: 'Vogue' | 'Vogue Korea' | 'Vogue Italy';
+    coverImage: string;
+    photoshootImages: string[];
+    interviewAnswers: { question: string; answer: string }[];
+    date: GameDate;
+}
+
 export interface ArtistData {
     money: number;
     hype: number;
@@ -561,6 +630,9 @@ export interface ArtistData {
     soundtrackOfferCount: number;
     offeredSoundtracks: Array<'F1 The Album' | 'Wicked' | 'Breaking Bad'>;
     weeksUntilNextSoundtrackOffer?: number;
+    lastVogueOfferYear?: number;
+    voguePhotoshoots?: VoguePhotoshoot[];
+    weeksUntilNextFeatureOffer?: number;
 }
 
 export interface GameState {
@@ -586,19 +658,40 @@ export interface GameState {
     albumChartHistory: ChartHistory;
     chartHistory: ChartHistory;
     spotifyGlobal50: ChartEntry[];
+    hotPopSongs: ChartEntry[];
+    hotRapRnb: ChartEntry[];
+    electronicChart: ChartEntry[];
+    countryChart: ChartEntry[];
+    hotPopSongsHistory: ChartHistory;
+    hotRapRnbHistory: ChartHistory;
+    electronicChartHistory: ChartHistory;
+    countryChartHistory: ChartHistory;
     spotifyNewEntries: number;
     selectedVideoId: string | null;
     selectedReleaseId: string | null;
     selectedSoundtrackId: string | null;
     activeSubmissionId: string | null;
     activeGeniusOffer: { songId: string; emailId: string } | null;
+    activeOnTheRadarOffer: { songId: string; emailId: string } | null;
+    activeTrshdOffer: { songId: string; emailId: string } | null;
     activeFallonOffer: { releaseId: string; offerType: 'performance' | 'interview' | 'both'; emailId: string; step?: 'performance' | 'interview' } | null;
     activeSoundtrackOffer: { albumTitle: 'F1 The Album' | 'Wicked' | 'Breaking Bad'; emailId: string } | null;
+    activeFeatureOffer: {
+        npcArtistName: string;
+        payout: number;
+        songQuality: number;
+        promotion?: { name: string; durationWeeks: number; };
+        emailId: string;
+    } | null;
     selectedXUserId: string | null;
     selectedXChatId: string | null;
     contractRenewalOffer: { labelId: string; isCustom?: boolean; artistId: string } | null;
     activeTourId: string | null;
     viewingPastLabelId: string | null;
+    activeVogueOffer: {
+        magazine: 'Vogue' | 'Vogue Korea' | 'Vogue Italy';
+        emailId: string;
+    } | null;
     // GRAMMYs
     grammySubmissions: { artistId: string, category: GrammyAward['category'], itemId: string, itemName: string }[];
     grammyCurrentYearNominations: GrammyCategory[] | null;
@@ -635,6 +728,12 @@ export type GameAction =
     | { type: 'ACCEPT_GENIUS_OFFER'; payload: { songId: string; emailId: string } }
     | { type: 'CREATE_GENIUS_INTERVIEW'; payload: { video: Video } }
     | { type: 'CANCEL_GENIUS_OFFER' }
+    | { type: 'ACCEPT_ONTHERADAR_OFFER'; payload: { songId: string; emailId: string } }
+    | { type: 'CREATE_ONTHERADAR_PERFORMANCE'; payload: { video: Video } }
+    | { type: 'CANCEL_ONTHERADAR_OFFER' }
+    | { type: 'ACCEPT_TRSHD_OFFER'; payload: { songId: string; emailId: string } }
+    | { type: 'CREATE_TRSHD_PERFORMANCE'; payload: { video: Video } }
+    | { type: 'CANCEL_TRSHD_OFFER' }
     | { type: 'ACCEPT_FALLON_OFFER'; payload: { releaseId: string; offerType: 'performance' | 'interview' | 'both'; emailId: string } }
     | { type: 'CREATE_FALLON_VIDEO'; payload: { video: Video; songId?: string } }
     | { type: 'CANCEL_FALLON_OFFER' }
@@ -687,6 +786,9 @@ export type GameAction =
     | { type: 'ACCEPT_SOUNDTRACK_OFFER'; payload: { albumTitle: 'F1 The Album' | 'Wicked' | 'Breaking Bad'; emailId: string } }
     | { type: 'CREATE_SOUNDTRACK_CONTRIBUTION'; payload: { albumTitle: 'F1 The Album' | 'Wicked' | 'Breaking Bad'; coverArt: string; songIds: string[] } }
     | { type: 'CANCEL_SOUNDTRACK_OFFER' }
+    | { type: 'ACCEPT_FEATURE_OFFER', payload: FeatureOffer }
+    | { type: 'CANCEL_FEATURE_OFFER' }
+    | { type: 'CREATE_FEATURE_SONG', payload: { songTitle: string, coverArt: string, releaseDate: GameDate } }
     | { type: 'CREATE_TOUR'; payload: Tour }
     | { type: 'START_TOUR'; payload: { tourId: string } }
     | { type: 'UPLOAD_TOUR_PHOTO'; payload: string }
@@ -698,4 +800,7 @@ export type GameAction =
     | { type: 'FIRE_SECURITY' }
     | { type: 'UPDATE_NPC_X_USER'; payload: { userId: string; newName: string; newUsername: string } }
     | { type: 'VIEW_PAST_LABEL_CHANNEL'; payload: string }
-    | { type: 'UPDATE_NPC_AVATAR'; payload: { userId: string; newAvatar: string } };
+    | { type: 'UPDATE_NPC_AVATAR'; payload: { userId: string; newAvatar: string } }
+    | { type: 'ACCEPT_VOGUE_OFFER'; payload: { magazine: 'Vogue' | 'Vogue Korea' | 'Vogue Italy'; emailId: string; } }
+    | { type: 'CANCEL_VOGUE_OFFER' }
+    | { type: 'CREATE_VOGUE_FEATURE'; payload: { photoshoot: VoguePhotoshoot } };

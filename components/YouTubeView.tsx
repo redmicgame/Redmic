@@ -1,6 +1,6 @@
 
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import type { Video } from '../types';
 import { SUBSCRIBER_THRESHOLD_VERIFIED, VIEWS_THRESHOLD_VERIFIED, SUBSCRIBER_THRESHOLD_STORE, LABELS } from '../constants';
@@ -9,6 +9,9 @@ import CheckCircleIcon from './icons/CheckCircleIcon';
 import DotsVerticalIcon from './icons/DotsVerticalIcon';
 import GeniusIcon from './icons/GeniusIcon';
 import CameraIcon from './icons/CameraIcon';
+import HomeIcon from './icons/HomeIcon';
+import UserGroupIcon from './icons/UserGroupIcon';
+import YouTubeIcon from './icons/YouTubeIcon';
 
 const formatTimeAgo = (releaseDate: { week: number, year: number }, currentDate: { week: number, year: number }): string => {
     const yearsAgo = currentDate.year - releaseDate.year;
@@ -22,8 +25,140 @@ const formatTimeAgo = (releaseDate: { week: number, year: number }, currentDate:
     return 'Just now';
 };
 
+const VideoItem: React.FC<{
+    video: Video;
+    channel?: { name: string; avatar: string };
+}> = ({ video, channel }) => {
+    const { gameState, dispatch } = useGame();
+    const { date } = gameState;
 
-const YouTubeView: React.FC = () => {
+    const handleVideoClick = () => {
+        dispatch({ type: 'SELECT_VIDEO', payload: video.id });
+        dispatch({ type: 'CHANGE_VIEW', payload: 'youtubeVideoDetail' });
+    };
+
+    return (
+        <button onClick={handleVideoClick} className="w-full text-left">
+            <div className="w-full aspect-video rounded-lg overflow-hidden bg-zinc-800">
+                <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
+            </div>
+            <div className="flex gap-3 mt-3 px-2">
+                {channel && (
+                    <img src={channel.avatar} alt={channel.name} className="w-9 h-9 rounded-full object-cover mt-1 flex-shrink-0" />
+                )}
+                <div className="flex-grow min-w-0">
+                    <h4 className="font-semibold leading-tight line-clamp-2">{video.title}</h4>
+                    <p className="text-xs text-zinc-400 truncate">
+                        {channel?.name} • {formatNumber(video.views)} views • {formatTimeAgo(video.releaseDate, date)}
+                    </p>
+                </div>
+                <DotsVerticalIcon className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+            </div>
+        </button>
+    );
+};
+
+const YouTubeHome: React.FC = () => {
+    const { gameState, allPlayerArtists } = useGame();
+    const { artistsData, group, careerMode } = gameState;
+    const [activeFilter, setActiveFilter] = useState('All');
+
+    const channelsMap = useMemo(() => {
+        const map = new Map<string, { name: string; avatar: string }>();
+        allPlayerArtists.forEach(artist => {
+            map.set(artist.id, { name: artist.name, avatar: artist.image });
+        });
+        LABELS.forEach(label => {
+            if (label.youtubeChannel) {
+                map.set(label.id, { name: label.youtubeChannel.name, avatar: label.logo });
+            }
+        });
+        return map;
+    }, [allPlayerArtists]);
+
+    const filters = useMemo(() => {
+        const baseFilters = ['All', 'Music Videos', 'Live', 'Interviews', 'Genius', 'GRAMMYs'];
+        if (careerMode === 'group' && group) {
+            const memberFilters = [group.name, ...group.members.map(m => m.name)];
+            return [...baseFilters, ...memberFilters];
+        }
+        return baseFilters;
+    }, [careerMode, group]);
+    
+    const filteredVideos = useMemo(() => {
+        const allVideos = Object.values(artistsData).flatMap(data => data.videos);
+        const sortedByDate = [...allVideos].sort((a, b) => (b.releaseDate.year * 52 + b.releaseDate.week) - (a.releaseDate.year * 52 + a.releaseDate.week));
+
+        if (activeFilter === 'All') {
+            return [...allVideos].sort(() => Math.random() - 0.5);
+        }
+        if (activeFilter === 'Music Videos') {
+            return sortedByDate.filter(v => v.type === 'Music Video');
+        }
+        if (activeFilter === 'Live') {
+            return sortedByDate.filter(v => v.type === 'Live Performance');
+        }
+        if (activeFilter === 'Interviews') {
+            return sortedByDate.filter(v => v.type === 'Interview' || v.type === 'Genius Verified');
+        }
+        if (activeFilter === 'Genius') {
+            return sortedByDate.filter(v => v.type === 'Genius Verified');
+        }
+        if (activeFilter === 'GRAMMYs') {
+            return sortedByDate.filter(v => v.type === 'Live Performance' && v.title.toLowerCase().includes('grammys'));
+        }
+
+        const artistToFilter = allPlayerArtists.find(a => a.name === activeFilter);
+        if (artistToFilter) {
+            return sortedByDate.filter(v => v.artistId === artistToFilter.id);
+        }
+        
+        return [...allVideos].sort(() => Math.random() - 0.5);
+    }, [artistsData, activeFilter, allPlayerArtists]);
+
+    return (
+        <>
+            <div className="sticky top-0 z-10">
+                <header className="p-3 flex items-center justify-between bg-[#0f0f0f]/80 backdrop-blur-sm">
+                    <div className="flex items-center gap-2">
+                        <YouTubeIcon className="w-8 h-8 text-red-500" />
+                        <h1 className="text-2xl font-bold tracking-tighter">YouTube</h1>
+                    </div>
+                </header>
+                <div className="px-3 bg-[#0f0f0f] border-b border-white/10">
+                    <div className="flex gap-2 overflow-x-auto py-2 scrollbar-hide">
+                        {filters.map(filter => (
+                            <button
+                                key={filter}
+                                onClick={() => setActiveFilter(filter)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors ${
+                                    activeFilter === filter
+                                        ? 'bg-white text-black'
+                                        : 'bg-zinc-800 hover:bg-zinc-700'
+                                }`}
+                            >
+                                {filter}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <div className="space-y-6 py-4">
+                {filteredVideos.length > 0 ? (
+                    filteredVideos.map(video => (
+                        <VideoItem key={video.id} video={video} channel={channelsMap.get(video.channelId)} />
+                    ))
+                ) : (
+                    <div className="text-center py-20 text-zinc-500">
+                        <p>No videos found for this filter.</p>
+                    </div>
+                )}
+            </div>
+        </>
+    );
+};
+
+const YouTubeChannelView: React.FC = () => {
     const { gameState, dispatch, activeArtist, activeArtistData } = useGame();
     const { date, activeYoutubeChannel, activeArtistId, viewingPastLabelId } = gameState;
     const [filter, setFilter] = useState<'Popular' | 'Latest' | 'Oldest'>('Popular');
@@ -129,7 +264,6 @@ const YouTubeView: React.FC = () => {
                 <h1 className="text-xl font-bold">YouTube</h1>
             </header>
 
-            {/* Banner */}
             <div className="h-24 md:h-32 bg-zinc-700">
                 <img src={channelData.banner} alt="Banner" className="w-full h-full object-cover" />
             </div>
@@ -168,7 +302,6 @@ const YouTubeView: React.FC = () => {
                         <button onClick={() => dispatch({type: 'SWITCH_YOUTUBE_CHANNEL', payload: 'label'})} className={`flex-1 py-1.5 rounded-full text-sm font-semibold ${isLabelView ? 'bg-zinc-600' : 'hover:bg-zinc-700'}`}>Label</button>
                     </div>
                 )}
-
 
                 <div className="mt-4 flex flex-col gap-2">
                     <button className="w-full bg-white text-black font-semibold py-2 rounded-full">Subscribe</button>
@@ -239,6 +372,34 @@ const YouTubeView: React.FC = () => {
                     </div>
                 )}
             </main>
+        </div>
+    );
+};
+
+const YouTubeBottomNav: React.FC<{ activeTab: 'home' | 'channels'; onTabChange: (tab: 'home' | 'channels') => void }> = ({ activeTab, onTabChange }) => {
+    return (
+        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-black border-t border-zinc-800 flex justify-around items-center z-30">
+            <button onClick={() => onTabChange('home')} className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-white' : 'text-zinc-400'}`}>
+                <HomeIcon className="w-6 h-6" />
+                <span className="text-xs">Home</span>
+            </button>
+            <button onClick={() => onTabChange('channels')} className={`flex flex-col items-center gap-1 ${activeTab === 'channels' ? 'text-white' : 'text-zinc-400'}`}>
+                <UserGroupIcon className="w-6 h-6" />
+                <span className="text-xs">Channels</span>
+            </button>
+        </nav>
+    );
+};
+
+const YouTubeView: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<'home' | 'channels'>('home');
+
+    return (
+        <div className="bg-[#0f0f0f] text-white min-h-screen">
+            <div className="pb-16"> {/* Padding for bottom nav */}
+                {activeTab === 'home' ? <YouTubeHome /> : <YouTubeChannelView />}
+            </div>
+            <YouTubeBottomNav activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
     );
 };

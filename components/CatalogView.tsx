@@ -1,5 +1,4 @@
 
-
 import React, { useMemo, useState, ChangeEvent } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import type { Release, Song } from '../types';
@@ -150,7 +149,7 @@ const CatalogView: React.FC = () => {
     
     const releasedProjects = useMemo(() => {
         return activeArtistData.releases
-            .filter(r => r.type === 'EP' || r.type === 'Album' || r.type === 'Album (Deluxe)')
+            .filter(r => (r.type === 'EP' || r.type === 'Album' || r.type === 'Album (Deluxe)') && !r.soundtrackInfo)
             .map(release => {
                 const releaseStreams = release.songIds.reduce((total, songId) => {
                     const song = activeArtistData.songs.find(s => s.id === songId);

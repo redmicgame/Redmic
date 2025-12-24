@@ -5,13 +5,13 @@ import { ArtistData } from './types';
 
 export const INITIAL_MONEY = 100000;
 
-export const GENRES = ['Pop', 'Hip Hop', 'R&B', 'Rock', 'Electronic', 'Indie', 'Country'];
+export const GENRES = ['Pop', 'Hip Hop', 'R&B', 'Rock', 'Electronic', 'Indie', 'Country', 'Christmas'];
 
 export const STUDIOS = [
-    { name: 'Bedroom Studio', cost: 500, qualityRange: [10, 50] },
-    { name: 'Local Studio', cost: 2000, qualityRange: [30, 70] },
-    { name: 'Pro Studio', cost: 8000, qualityRange: [50, 90] },
-    { name: 'Legendary Studio', cost: 25000, qualityRange: [70, 100] },
+    { name: 'Bedroom Studio', cost: 5000, qualityRange: [10, 50] },
+    { name: 'Local Studio', cost: 20000, qualityRange: [30, 70] },
+    { name: 'Pro Studio', cost: 80000, qualityRange: [50, 90] },
+    { name: 'Legendary Studio', cost: 250000, qualityRange: [70, 100] },
 ];
 
 export const REVIEW_COST = 1000;
@@ -50,7 +50,6 @@ export const CATALOG_VALUE_MULTIPLIER = 0.5; // Catalog is worth $0.50 per total
 export const TIER_LEVELS: { [key in Label['tier']]: number } = {
     'Low': 1,
     'Mid-Low': 2,
-    // FIX: Corrected typo 'Mid-High' to 'Mid-high' to match the type definition in types.ts.
     'Mid-high': 3,
     'Top': 4,
 };
@@ -59,23 +58,22 @@ export const TIER_LEVELS: { [key in Label['tier']]: number } = {
 // Promotion Constants
 export const PROMOTION_PACKAGES = {
     song: [
-        { name: 'Playlist Push', weeklyCost: 2500, boost: 1.5, description: 'Modest boost targeting curated playlists.', requiredTier: 'Low' as const },
-        { name: 'Radio Campaign', weeklyCost: 12500, boost: 2.5, description: 'Significant boost via radio airplay.', requiredTier: 'Mid-Low' as const },
-        // FIX: Corrected typo 'Mid-High' to 'Mid-high' to match the type definition in types.ts.
-        { name: 'TikTok Trend', weeklyCost: 75000, boost: 4.0, description: 'Explosive viral potential, billed weekly.', requiredTier: 'Mid-high' as const },
-        { name: 'Global Megahit Campaign', weeklyCost: 125000, boost: 10, description: 'Turn your song into a worldwide phenomenon.', requiredTier: 'Top' as const },
+        { name: 'Guaranteed Placement', weeklyCost: 2500, boost: 1.5, description: 'Your song, their playlist. No questions asked.', requiredTier: 'Low' as const },
+        { name: 'Airwave Saturation', weeklyCost: 12500, boost: 2.5, description: 'Ensure your track is on repeat across all stations.', requiredTier: 'Mid-Low' as const },
+        { name: 'Viral Injection', weeklyCost: 75000, boost: 4.0, description: 'Forge a viral moment. Authenticity not included.', requiredTier: 'Mid-high' as const },
+        { name: 'Industry Plant Initiative', weeklyCost: 125000, boost: 10, description: 'The full package. We make them a star.', requiredTier: 'Top' as const },
     ],
     video: [
-        { name: 'Featured Placement', weeklyCost: 5000, boost: 2, description: 'Get your video featured on the homepage.' },
-        { name: 'Ad Campaign', weeklyCost: 18750, boost: 3.5, description: 'Widespread ad campaign across the platform.' },
-        { name: 'Viral Sensation', weeklyCost: 125000, boost: 10, description: 'Engineer a viral moment for your video.' },
-        { name: 'Synergy Campaign', weeklyCost: 75000, boost: -1, description: "Match your song's weekly streams as views for this video." },
-        { name: 'Global Premiere', weeklyCost: 250000, boost: 30, description: 'A massive global premiere event.' },
-        { name: 'Cultural Reset', weeklyCost: 2500000, boost: 75, description: 'An event video that dominates the cultural conversation.' }
+        { name: 'Homepage Hijack', weeklyCost: 5000, boost: 2, description: 'Front page placement. Guaranteed.' },
+        { name: 'Algorithmic Manipulation', weeklyCost: 18750, boost: 3.5, description: 'Force your video into the recommendation engine.' },
+        { name: 'Bot Farm Boost', weeklyCost: 125000, boost: 10, description: 'Simulate viral engagement with our network.' },
+        { name: 'Stream Laundering', weeklyCost: 75000, boost: -1, description: 'Convert song streams into "organic" video views.' },
+        { name: 'Manufactured Event', weeklyCost: 250000, boost: 30, description: 'Create the illusion of a worldwide premiere event.' },
+        { name: 'The Takeover', weeklyCost: 2500000, boost: 75, description: 'An offer you can\'t refuse. Your video will be everywhere.' }
     ],
     resurgence: [
-        { name: 'Nostalgia Campaign', weeklyCost: 31250, boost: 10, description: 'A massive push to make an old classic a hit again.' },
-        { name: 'Legendary Revival', weeklyCost: 125000, boost: 30, description: 'Breathe new life into a classic, making it bigger than ever.' }
+        { name: 'Memory Machine', weeklyCost: 31250, boost: 10, description: 'Revive a classic with a modern "organic" trend.' },
+        { name: 'Zombie Hit Revival', weeklyCost: 125000, boost: 30, description: 'Resurrect a forgotten hit and make it a legend.' }
     ]
 };
 
@@ -100,7 +98,14 @@ export const NPC_ARTIST_NAMES = [
     'The 1975', 'Tame Impala', 'Glass Animals', 'FINNEAS', 'Jack Harlow',
     'Sabrina Carpenter', 'Tate McRae', 'Chappell Roan', 'Ice Spice', '21 Savage',
     'Future', 'Metro Boomin', 'Morgan Wallen', 'Luke Combs', 'Zach Bryan',
-    'Peso Pluma', 'Karol G', 'Shakira', 'Rauw Alejandro', 'Anitta'
+    'Peso Pluma', 'Karol G', 'Shakira', 'Rauw Alejandro', 'Anitta',
+    // Added for more collaboration options
+    // Female Rappers
+    'Latto', 'GloRilla', 'Sexyy Red', 'Coi Leray', 'Flo Milli',
+    // K-Pop Artists
+    'BTS', 'BLACKPINK', 'NewJeans', 'Stray Kids', 'TWICE', 'SEVENTEEN', 'LE SSERAFIM', '(G)I-DLE', 'Jungkook', 'Jennie', 'Lisa', 'aespa',
+    // Latin Artists
+    'J Balvin', 'Maluma', 'Rosalía', 'Feid', 'Myke Towers', 'Young Miko', 'Ozuna', 'Bizarrap'
 ];
 export const NPC_SONG_ADJECTIVES = ['Golden', 'Ordinary', 'What I', 'Your', 'Midnight', 'Electric', 'Fading', 'Broken', 'Summer', 'Winter', 'Lost', 'Found', 'Starlight', 'City', 'Velvet', 'Crystal', 'Silent', 'Cosmic', 'Wild', 'Sweet', 'Bitter'];
 export const NPC_SONG_NOUNS = ['Idol', 'Want', 'Dreams', 'Rain', 'Lights', 'Hearts', 'Echoes', 'Sky', 'Moon', 'Sun', 'Stars', 'Ocean', 'River', 'Memories', 'Secrets', 'Lies', 'Truth', 'Flames', 'Sparks', 'Ghosts'];
@@ -138,7 +143,6 @@ export const LABELS: Label[] = [
     { 
         id: 'republic', 
         name: 'Republic Records', 
-        // FIX: Corrected typo 'Mid-High' to 'Mid-high' to match the type definition in types.ts.
         tier: 'Mid-high',
         logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSI4IiBmaWxsPSIjRkZGRkZGIi8+PHBhdGggZD0iTTMyIDYuMzk4YzQuMjY0IDAgOC40NTYgMS40MyAxMS45NDQgNC4wNDVMOC4zNiAzMS4xMjhWMTAuNDQzQzE1MjIgNy44MyAyMy4yNTYgNi40IDMyIDYuNHpNMzIgNTcuNmMtNC4yNjQgMC04LjQ1Ni0xLjQzLTExLjk0NC00LjA0NUw1NS42NCAzMi44NzJ2MjAuNjg1Yy02LjgtMi42MTItMTQuODU2LTQuMDQzLTIzLjY0LTQuMDQzeiIgZmlsbD0iIzAwMCIvPjwvc3ZnPg==', 
         promotionMultiplier: 1.5, 
@@ -166,7 +170,7 @@ export const LABELS: Label[] = [
         id: 'rca', 
         name: 'RCA Records', 
         tier: 'Mid-Low',
-        logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMiIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik0zMiA1MC42NjdjLTEwLjMxIDAtMTguNjY3LTguMzU3LTE4LjY2Ny0xOC42NjdzOC4zNTctMTguNjY3IDE4LjY2Ny0xOC42NjcgMTguNjY3IDguMzU3IDE4LjY2NyAxOC42NjctOC4zNTcgMTguNjY3LTE4LjY2NyAxOC42Njd6IiBmaWxsPSIjRTQxRTI3Ii8+PHBhdGggZD0iTTMyIDE4LjY2N2MtMi43NTIgMC01LjM5IDEuMTU1LTYuNTM0IDMuMzQybC0uMDA4LjAxM2MtLjE0OS4yNTYtLjIyNi41NTYtLjIyNi44NjggMCAuNzY1LjYxOCAxLjM4MyAxLjM4MyAxLjM4My4zMTIgMCAuNjA3LS4xMDMuODU1LS4yNzggMS40NjgtMS4wMzQgMy4xODUtMS41OTQgNC44NzUtMS42MS4wNTQgMCAuMTA2LjAwMi4xNi4wMDJhMS4zNjggMS4zNjggMCAwMC44MTMtLjU0MyAxLjM4MiAxLjM4MiAwIDAwLjM2OC0xLjYyNWMtLjA1My0uMDk1LS4xMTYtLjE4My0uMTg4LS4yNjQtLjk4LTEuMzMtMi40Ny0yLjA3NC00LjA5NS0yLjA3NHptLTkuMDI2IDE0LjYyNWMxLjQ0OC4wMDQgMi44OTU-.27IDQuMjM1LS44MDJsLjEyNC0uMDQ4Yy4yMDctLjA3OC40My0uMTE4LjY1LS4xMTguNzc1IDAgMS40MDQuNjMgMS40MDQgMS40MDQgMCAuMjE4LS4wNTIuNDM1LS4xNDguNjM0bC0uMDIuMDQyYy0xLjgwNyAzLjA0Mi00LjQ4IDQuNzctNy4xNzQgNC43Ny0zLjQ0NyAwLTYuNTYtMi4zNDYtNy42NzMtNS44MDgtLjA1NC0uMTcxLS4wODQtLjM1LS4wODQtLjUzNCAwLS43NzUuNjMtMS40MDQgMS40MDQtMS40MDQuMjM1IDAgLjQ2LjA2LjY2LjE2OGwxLjQ5LjY3OGMxLjMyLjYgMi43NS45MzYgNC4yNDIuOTM2em0xOC45MDgtMi40MjJjLTEuMjgtLjg4OC0yLjczLTEuMzk0LTQuMjYtMS40MDgtMi4zOTgtLjAyLTIuNTU4LS4wMi00LjY2Ni4wMDItLjg3NS4wMDItMS42NzctLjMxMi0yLjQ5LS44NzUtMS44MTctMS4yNi0yLjQxNy0zLjM4My0xLjczNC01LjU4LjU1NC0xLjc3NiAyLjA1OC0zLjA2NyAzLjg1NC0zLjQ0OC4yMS0uMDQ0LjQzLS4wNjYuNjUtLjA2Ni43NzUgMCAxLjQwNC42MyAxLjQwNCAxLjQwNCAwIC4yOS0uMDkgLjU2OC0uMjQ4LjgwMmwtLjQzMi42NDhjLS40MTcuNjI0LS45OC45OTYtMS42MTguOTk2LS4zMSAwLS41OTgtLjA3OC0uODYyLS4yMzZsLS4xMy0uMDhjLS4xOC0uMTE1LS4yODMtLjMxMi0uMjgzLS41MiAwLS4zMTIuMTY0LS42LjQyNC0uNzY2bC4wNTctLjAzNWMuNTE0LS4zMiAxLjA3My0uNDggMS42Ni0uNDgucDEuNzM4Yy4zOTIgMCAuNzU3LjE1NSAxLjAyNC40MzZsLjAzNi4wMzRjLjI2LjI1LjM5Ny41OTIuMzk3Ljk1IDAgLjM2LS4xNDIuNzA4LS4zOTcuOTYybC0uMDc0LjA3Yy0uNTU0LjUzNC0xLjI4NC44My0yLjA1LjgzLS4wMiAwIDAgMCAwIDBsLTMuMTQ4LjAwMmMtLjMxMiAwLS42LS4xMi0uODI4LS4zMjgtLjIzLS4yMi0uMzYtLjUxLS4zNi0uODI2IDAtLjI4OC4xLS41NjIuMjgzLS43NzZsLjAxLS4wMTJjLjc3NS0uOTEyIDEuODQtMS40MTggMi45Ny0xLjQxOCAxLjI5IDAgMi40NjIuNTggMy4yMzggMS41MzZsLjA0Mi4wNTFjLjM4LjQ2LjU4MyAxLjA0LjU4MyAxLjY0IDAgLjYtLjIwMyAxLjE4LS41OSAxLjY0eiIgZmlsbD0iI0ZGRiIvPjwvc3ZnPg==',
+        logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMiIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik0zMiA1MC42NjdjLTEwLjMxIDAtMTguNjY3LTguMzU3LTE4LjY2Ny0xOC42NjdzOC4zNTctMTguNjY3IDE4LjY2Ny0xOC42NjcgMTguNjY3IDguMzU3IDE4LjY2NyAxOC42NjctOC4zNTcgMTguNjY3LTE4LjY2NyAxOC42Njd6IiBmaWxsPSIjRTQxRTI3Ii8+PHBhdGggZD0iTTMyIDE4LjY2N2MtMi43NTIgMC01LjM5IDEuMTU1LTYuNTM0IDMuMzQybC0uMDA4LjAxM2MtLjE0OS4yNTYtLjIyNi41NTYtLjIyNi44NjggMCAuNzY1LjYxOCAxLjM4MyAxLjM4MyAxLjM4My4zMTIgMCAuNjA3LS4xMDMuODU1LS4yNzggMS40NjgtMS4wMzQgMy4xODUtMS41OTQgNC44NzUtMS42MS4wNTQgMCAuMTA2LjAwMi4xNi4wMDJhMS4zNjggMS4zNjggMCAwMC44MTMtLjU0MyAxLjM4MiAxLjM4MiAwIDAwLjM2OC0xLjYyNWMtLjA1My0uMDk1LS4xMTYtLjE4My0uMTg4LS4yNjQtLjk4LTEuMzMtMi40Ny0yLjA3NC00LjA5NS0yLjA3NHptLTkuMDI2IDE0LjYyNWMxLjQ0OC4wMDQgMi44OTU-.27IDQuMjM1LS44MDJsLjEyNC0uMDQ4Yy4yMDctLjA3OC40My0uMTE4LjY1LS4xMTguNzc1IDAgMS40MDQuNjMgMS40MDQgMS40MDQgMCAuMjE4LS4wNTIuNDM1LS4xNDguNjM0bC0uMDIuMDQyYy0xLjgwNyAzLjA0Mi00LjQ4IDQuNzctNy4xNzQgNC43Ny0zLjQ0NyAwLTYuNTYtMi4zNDYtNy42NzMtNS44MDgtLjA1NC0uMTcxLS4wODQtLjM1LS4wODQtLjUzNCAwLS43NzUuNjMtMS40MDQgMS40MDQtMS40MDQuMjM1IDAgLjQ2LjA2LjY2LjE2OGwxLjQ5LjY3OGMxLjMyLjYgMi43NS45MzYgNC4yNDIuOTM2em0xOC45MDgtMi40MjJjLTEuMjgtLjg4OC0yLjczLTEuMzk0LTQuMjYtMS40MDgtMi4zOTgtLjAyLTIuNTU4LS4wMi00LjY2Ni4wMDItLjg3NS4wMDItMS42NzctLjMxMi0yLjQ5LS44NzUtMS44MTctMS4yNi0yLjQxNy0zLjM4My0xLjczNC01LjU4LjU1NC0xLjc3NiAyLjA1OC0zLjA2NyAzLjg1NC0zLjQ0OC4yMS0uMDQ0LjQzLS4wNjYuNjUtLjA2Ni43NzUgMCAxLjQwNC42MyAxLjQwNCAxLjQwNCAwIC4yOS0uMDkgLjU2OC0uMjQ4LjgwMmwtLjQzMi42NDhjLS40MTcuNjI0LS45OC45OTYtMS42MTguOTk2LS4zMSAwLS41OTgtLjA3OC0uODYyLS4yMzZsLS4xMy0uMDhjLS4xOC0uMTE1LS4yODMtLjMxMi0uMjgzLS41MiAwLS4zMTIuMTY0LS42LjQyNC0uNzY2bC4wNTctLjAzNWMuNTE0LS4zMiAxLjA3My0uNDggMS42Ni0uNDgucDEuNzM4Yy4zOTIgMCAuNzU3LjE1NSAxLjAyNC40MzZsLjAzNi4wMzRjLjI2LjI1LjM5Ny41OTIuMzk3Ljk1IDAgLjM2LS4xNDIuNzA4LS4zOTcuOTYybC0uMDc0LjA3Yy0uNTU0LjUzNC0xLjI4NC44My0yLjA1LjgzLS4wMiAwIDAgMCAwIDBsLTMuMTQ4LjAwMmMtLjMxMiAwLS42LS4xMi0uODI4LS4zMjgtLjIzLS4yMi0uMzYtLjUxLS4zNi0uODI2IDAtLjI4OC4xLS4wNjIuMjgzLS43NzZsLjAxLS4wMTJjLjc3NS0uOTEyIDEuODQtMS40MTggMi45Ny0xLjQxOCAxLjI5IDAgMi40NjIuNTggMy4yMzggMS41MzZsLjA0Mi4wNTFjLjM4LjQ2LjU4MyAxLjA0LjU4MyAxLjY0IDAgLjYtLjIwMyAxLjE4LS41OSAxLjY0eiIgZmlsbD0iI0ZGRiIvPjwvc3ZnPg==',
         promotionMultiplier: 1.2, 
         creativeControl: 40,
         minQuality: 40,
@@ -239,32 +243,28 @@ export const TOUR_TICKET_PRICE_SUGGESTIONS: { [key: string]: number } = {
 
 export const VENUES = {
     'Small Halls': [
-        { name: 'The Roxy', city: 'Los Angeles', capacity: 500 },
-        { name: 'The Bowery Ballroom', city: 'New York', capacity: 575 },
-        { name: 'The Independent', city: 'San Francisco', capacity: 500 },
-        { name: 'Lincoln Hall', city: 'Chicago', capacity: 500 },
-        { name: 'The Masquerade', city: 'Atlanta', capacity: 1000 },
+        { name: 'The Roxy', city: 'Los Angeles', capacity: 500 }, { name: 'The Bowery Ballroom', city: 'New York', capacity: 575 }, { name: 'The Independent', city: 'San Francisco', capacity: 500 }, { name: 'Lincoln Hall', city: 'Chicago', capacity: 500 }, { name: 'The Masquerade', city: 'Atlanta', capacity: 1000 },
+        { name: 'The Fillmore', city: 'San Francisco', capacity: 1315 }, { name: '9:30 Club', city: 'Washington D.C.', capacity: 1200 }, { name: 'First Avenue', city: 'Minneapolis', capacity: 1550 }, { name: 'The Showbox', city: 'Seattle', capacity: 1150 }, { name: "Stubb's BBQ", city: 'Austin', capacity: 1800 },
+        { name: 'The Fonda Theatre', city: 'Los Angeles', capacity: 1200 }, { name: 'Brooklyn Steel', city: 'Brooklyn', capacity: 1800 }, { name: 'Paradise Rock Club', city: 'Boston', capacity: 933 }, { name: 'The Metro', city: 'Chicago', capacity: 1100 }, { name: 'Ogden Theatre', city: 'Denver', capacity: 1600 },
+        { name: 'The Tabernacle', city: 'Atlanta', capacity: 2600 }, { name: 'House of Blues', city: 'New Orleans', capacity: 843 }, { name: 'The Wiltern', city: 'Los Angeles', capacity: 1850 }, { name: "King Tut's Wah Wah Hut", city: 'Glasgow', capacity: 300 }, { name: 'The Troubadour', city: 'London', capacity: 550 },
     ],
     'Large Halls': [
-        { name: 'Hollywood Palladium', city: 'Los Angeles', capacity: 3700 },
-        { name: 'Hammerstein Ballroom', city: 'New York', capacity: 3500 },
-        { name: 'Aragon Ballroom', city: 'Chicago', capacity: 5000 },
-        { name: 'The Anthem', city: 'Washington D.C.', capacity: 6000 },
-        { name: 'Ryman Auditorium', city: 'Nashville', capacity: 2362 },
+        { name: 'Hollywood Palladium', city: 'Los Angeles', capacity: 3700 }, { name: 'Hammerstein Ballroom', city: 'New York', capacity: 3500 }, { name: 'Aragon Ballroom', city: 'Chicago', capacity: 5000 }, { name: 'The Anthem', city: 'Washington D.C.', capacity: 6000 }, { name: 'Ryman Auditorium', city: 'Nashville', capacity: 2362 },
+        { name: 'Radio City Music Hall', city: 'New York', capacity: 6015 }, { name: 'Greek Theatre', city: 'Los Angeles', capacity: 5870 }, { name: 'Red Rocks Amphitheatre', city: 'Morrison', capacity: 9525 }, { name: 'Bill Graham Civic Auditorium', city: 'San Francisco', capacity: 8500 }, { name: 'The Met', city: 'Philadelphia', capacity: 3500 },
+        { name: 'O2 Academy Brixton', city: 'London', capacity: 4921 }, { name: 'Eventim Apollo', city: 'London', capacity: 5300 }, { name: "L'Olympia", city: 'Paris', capacity: 2000 }, { name: 'Massey Hall', city: 'Toronto', capacity: 2752 }, { name: 'Fox Theater', city: 'Oakland', capacity: 2800 },
+        { name: 'The Chicago Theatre', city: 'Chicago', capacity: 3600 }, { name: 'The Armory', city: 'Minneapolis', capacity: 8400 }, { name: 'ACL Live at The Moody Theater', city: 'Austin', capacity: 2750 }, { name: 'WaMu Theater', city: 'Seattle', capacity: 7000 }, { name: 'The Fillmore', city: 'Detroit', capacity: 2900 },
     ],
     'Arenas': [
-        { name: 'Madison Square Garden', city: 'New York', capacity: 20000 },
-        { name: 'The Forum', city: 'Los Angeles', capacity: 17500 },
-        { name: 'United Center', city: 'Chicago', capacity: 23500 },
-        { name: 'American Airlines Arena', city: 'Miami', capacity: 21000 },
-        { name: 'The O2', city: 'London', capacity: 20000 },
+        { name: 'Madison Square Garden', city: 'New York', capacity: 20000 }, { name: 'The Forum', city: 'Los Angeles', capacity: 17500 }, { name: 'United Center', city: 'Chicago', capacity: 23500 }, { name: 'American Airlines Arena', city: 'Miami', capacity: 21000 }, { name: 'The O2', city: 'London', capacity: 20000 },
+        { name: 'Crypto.com Arena', city: 'Los Angeles', capacity: 19067 }, { name: 'Barclays Center', city: 'Brooklyn', capacity: 17732 }, { name: 'Scotiabank Arena', city: 'Toronto', capacity: 19800 }, { name: 'Lanxess Arena', city: 'Cologne', capacity: 20000 }, { name: 'Accor Arena', city: 'Paris', capacity: 20300 },
+        { name: '3Arena', city: 'Dublin', capacity: 13000 }, { name: 'Rod Laver Arena', city: 'Melbourne', capacity: 14820 }, { name: 'Qudos Bank Arena', city: 'Sydney', capacity: 21032 }, { name: 'TD Garden', city: 'Boston', capacity: 19580 }, { name: 'Capital One Arena', city: 'Washington D.C.', capacity: 20356 },
+        { name: 'American Airlines Center', city: 'Dallas', capacity: 20000 }, { name: 'State Farm Arena', city: 'Atlanta', capacity: 21000 }, { name: 'Wells Fargo Center', city: 'Philadelphia', capacity: 21000 }, { name: 'Chase Center', city: 'San Francisco', capacity: 18064 }, { name: 'Climate Pledge Arena', city: 'Seattle', capacity: 18100 },
     ],
     'Stadiums': [
-        { name: 'SoFi Stadium', city: 'Los Angeles', capacity: 70000 },
-        { name: 'MetLife Stadium', city: 'New York', capacity: 82500 },
-        { name: 'Wembley Stadium', city: 'London', capacity: 90000 },
-        { name: 'AT&T Stadium', city: 'Dallas', capacity: 80000 },
-        { name: 'Mercedes-Benz Stadium', city: 'Atlanta', capacity: 71000 },
+        { name: 'SoFi Stadium', city: 'Los Angeles', capacity: 70000 }, { name: 'MetLife Stadium', city: 'New York', capacity: 82500 }, { name: 'Wembley Stadium', city: 'London', capacity: 90000 }, { name: 'AT&T Stadium', city: 'Dallas', capacity: 80000 }, { name: 'Mercedes-Benz Stadium', city: 'Atlanta', capacity: 71000 },
+        { name: 'Rose Bowl', city: 'Pasadena', capacity: 92542 }, { name: 'Soldier Field', city: 'Chicago', capacity: 61500 }, { name: 'Gillette Stadium', city: 'Foxborough', capacity: 65878 }, { name: 'Lincoln Financial Field', city: 'Philadelphia', capacity: 69796 }, { name: "Levi's Stadium", city: 'Santa Clara', capacity: 68500 },
+        { name: 'NRG Stadium', city: 'Houston', capacity: 72220 }, { name: 'Hard Rock Stadium', city: 'Miami', capacity: 64767 }, { name: 'Estadio Azteca', city: 'Mexico City', capacity: 87523 }, { name: 'Maracanã Stadium', city: 'Rio de Janeiro', capacity: 78838 }, { name: 'Stade de France', city: 'Paris', capacity: 80698 },
+        { name: 'Allianz Arena', city: 'Munich', capacity: 75024 }, { name: 'Tokyo Dome', city: 'Tokyo', capacity: 55000 }, { name: 'Anfield', city: 'Liverpool', capacity: 61000 }, { name: 'Old Trafford', city: 'Manchester', capacity: 74310 }, { name: 'Melbourne Cricket Ground', city: 'Melbourne', capacity: 100024 },
     ],
 };
 

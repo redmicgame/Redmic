@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import { OnlyFansProfile } from '../types';
@@ -20,6 +21,11 @@ const OnlyFansSetupView: React.FC = () => {
         setError('');
         if (!displayName.trim() || !username.trim()) {
             setError("Display Name and Username are required.");
+            return;
+        }
+
+        if (price > 49.99) {
+            setError("The monthly subscription price cannot be higher than $49.99.");
             return;
         }
 

@@ -1,8 +1,7 @@
 
-
 import React, { createContext, useReducer, useContext, ReactNode, useEffect, useState } from 'react';
 import { db } from '../db/db';
-import type { GameState, GameAction, Email, NpcSong, ChartEntry, ChartHistory, ArtistData, Artist, Group, Song, LabelSubmission, Contract, Release, XUser, XPost, XTrend, XChat, CustomLabel, PopBaseOffer, NpcAlbum, AlbumChartEntry, RedMicProState, GrammyCategory, GrammyAward, GrammyContender, OnlyFansProfile, OnlyFansPost, XSuspensionStatus, SoundtrackAlbum, SoundtrackTrack, Manager, SecurityTeam, Label } from '../types';
+import type { GameState, GameAction, Email, NpcSong, ChartEntry, ChartHistory, ArtistData, Artist, Group, Song, LabelSubmission, Contract, Release, XUser, XPost, XTrend, XChat, CustomLabel, PopBaseOffer, NpcAlbum, AlbumChartEntry, RedMicProState, GrammyCategory, GrammyAward, GrammyContender, OnlyFansProfile, OnlyFansPost, XSuspensionStatus, SoundtrackAlbum, SoundtrackTrack, Manager, SecurityTeam, Label, VoguePhotoshoot, FeatureOffer } from '../types';
 import { INITIAL_MONEY, STREAM_INCOME_MULTIPLIER, SUBSCRIBER_THRESHOLD_STORE, VIEW_INCOME_MULTIPLIER, NPC_ARTIST_NAMES, NPC_SONG_ADJECTIVES, NPC_SONG_NOUNS, NPC_COVER_ART, LABELS, PLAYLIST_PITCH_COST, PLAYLIST_PITCH_SUCCESS_RATE, PLAYLIST_BOOST_MULTIPLIER, PLAYLIST_BOOST_WEEKS, GENRES, MANAGERS, SECURITY_TEAMS, GIGS } from '../constants';
 import { generateWeeklyXContent } from '../utils/xContentGenerator';
 import { REAL_WORLD_DISCOGRAPHIES } from '../realWorldDiscographies';
@@ -294,19 +293,31 @@ const initialState: GameState = {
     albumChartHistory: {},
     chartHistory: {},
     spotifyGlobal50: [],
+    hotPopSongs: [],
+    hotRapRnb: [],
+    electronicChart: [],
+    countryChart: [],
+    hotPopSongsHistory: {},
+    hotRapRnbHistory: {},
+    electronicChartHistory: {},
+    countryChartHistory: {},
     spotifyNewEntries: 0,
     selectedVideoId: null,
     selectedReleaseId: null,
     selectedSoundtrackId: null,
     activeSubmissionId: null,
     activeGeniusOffer: null,
+    activeOnTheRadarOffer: null,
+    activeTrshdOffer: null,
     activeFallonOffer: null,
     activeSoundtrackOffer: null,
+    activeFeatureOffer: null,
     selectedXUserId: null,
     selectedXChatId: null,
     contractRenewalOffer: null,
     activeTourId: null,
     viewingPastLabelId: null,
+    activeVogueOffer: null,
     grammySubmissions: [],
     grammyCurrentYearNominations: null,
     activeGrammyPerformanceOffer: null,
@@ -321,7 +332,59 @@ const GameContext = createContext<{
     allPlayerArtists: Array<Artist | Group>;
 } | undefined>(undefined);
 
+const calculateGenreChart = (
+    allContenders: any[],
+    genres: string[],
+    previousChart: ChartEntry[],
+    chartHistory: ChartHistory
+): { newChart: ChartEntry[], newHistory: ChartHistory } => {
+    const genreContenders = allContenders
+        .filter(song => genres.includes(song.genre));
+    
+    genreContenders.sort((a, b) => b.weeklyStreams - a.weeklyStreams);
+
+    const top50 = genreContenders.slice(0, 50);
+    const newHistory: ChartHistory = { ...chartHistory };
+    const newChart: ChartEntry[] = [];
+    const prevChartMap = new Map(previousChart.map(entry => [entry.uniqueId, entry]));
+
+    top50.forEach((song, index) => {
+        const rank = index + 1;
+        const history = newHistory[song.uniqueId];
+        const prevChartEntry = prevChartMap.get(song.uniqueId);
+
+        if (history) {
+            history.weeksOnChart += 1;
+            history.lastRank = rank;
+            if (rank < history.peak) history.peak = rank;
+            if (rank === 1) {
+                history.weeksAtNo1 = (history.weeksAtNo1 || 0) + 1;
+            }
+        } else {
+            newHistory[song.uniqueId] = { weeksOnChart: 1, peak: rank, lastRank: rank, weeksAtNo1: rank === 1 ? 1 : 0 };
+        }
+
+        newChart.push({
+            rank: rank,
+            lastWeek: prevChartEntry?.rank ?? null,
+            peak: newHistory[song.uniqueId].peak,
+            weeksOnChart: newHistory[song.uniqueId].weeksOnChart,
+            title: song.title,
+            artist: song.artist,
+            coverArt: song.coverArt,
+            isPlayerSong: song.isPlayerSong,
+            songId: song.songId,
+            uniqueId: song.uniqueId,
+            weeklyStreams: song.weeklyStreams,
+        });
+    });
+
+    return { newChart, newHistory };
+};
+
+
 const gameReducer = (state: GameState, action: GameAction): GameState => {
+    const allPlayerArtistsAndGroups: (Artist | Group)[] = state.careerMode === 'solo' && state.soloArtist ? [state.soloArtist] : (state.group ? [state.group, ...state.group.members] : []);
     const tmzUser: XUser = {
         id: 'tmz', name: 'TMZ', username: 'TMZ',
         avatar: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHJ4PSI4IiBmaWxsPSIjRkZGRkZGIi8+PHJlY3QgeD0iNCIgeT0iNCIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iNCIgZmlsbD0iI0QzMjYyNiIvPjxwYXRoIGQ9Ik0xNiAyMHYyNGg2VjMybDQtNGg0djIwbC0xMi0xMi0xMiAxMnoiIGZpbGw9IiNGRkYiLz48cGF0aCBkPSJNMzYgMjB2MjRoNlYzMmw0LTRoNHYyMGwtMTItMTItMTIgMTJ6IiBmaWxsPSIjRkZGIi8+PC9zdmc+',
@@ -657,8 +720,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             let popBaseNewMusicPost: XPost | null = null;
             try {
                 const newMusicItems: { artist: string, title: string, type: 'song' | 'album' }[] = [];
-                const allPlayerArtistsAndGroups: (Artist | Group)[] = state.careerMode === 'solo' && state.soloArtist ? [state.soloArtist] : (state.group ? [state.group, ...state.group.members] : []);
-
+                
                 for (const artistId in state.artistsData) {
                     const artistData = state.artistsData[artistId];
                     const artistProfile = allPlayerArtistsAndGroups.find(a => a.id === artistId);
@@ -732,7 +794,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 allCustomLabels.push(...updatedArtistsData[artistId].customLabels);
             }
 
-            const allPlayerArtistsAndGroups: (Artist | Group)[] = state.careerMode === 'solo' && state.soloArtist ? [state.soloArtist] : (state.group ? [state.group, ...state.group.members] : []);
             const playerArtistIds = new Set(allPlayerArtistsAndGroups.map(a => a.id));
 
             for (const artistId in updatedArtistsData) {
@@ -869,6 +930,79 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                     }
                 }
                 
+                // --- TOUR LOGIC ---
+                artistData.tours = artistData.tours.map(tour => {
+                    if (tour.status === 'active') {
+                        if (tour.currentVenueIndex < tour.venues.length) {
+                            const venue = tour.venues[tour.currentVenueIndex];
+                            
+                            // Calculate sales
+                            // Base demand based on popularity (0-100) and hype (0-1000)
+                            // e.g. Pop 50, Hype 100 -> 40000 + 5000 = 45000 base interest
+                            let baseDemand = (artistData.popularity * 800) + (artistData.hype * 50); 
+                            
+                            // Price sensitivity: Suggestion is around $25-$120. 
+                            // If price is high, demand drops.
+                            const priceSensitivity = 1.2 - (venue.ticketPrice / 200); // Simple linear drop
+                            let demand = baseDemand * Math.max(0.1, priceSensitivity);
+                            
+                            // Random flux
+                            demand = demand * (0.8 + Math.random() * 0.4);
+                            
+                            const ticketsSold = Math.floor(Math.min(venue.capacity, demand));
+                            const revenue = ticketsSold * venue.ticketPrice;
+                            
+                            const updatedVenue = {
+                                ...venue,
+                                ticketsSold,
+                                revenue,
+                                soldOut: ticketsSold >= venue.capacity
+                            };
+                            
+                            const newVenues = [...tour.venues];
+                            newVenues[tour.currentVenueIndex] = updatedVenue;
+                            
+                            const nextIndex = tour.currentVenueIndex + 1;
+                            const isFinished = nextIndex >= tour.venues.length;
+                            
+                            // Add income to artist
+                            artistData.money += revenue;
+                            
+                            // Add hype for successful shows
+                            if (updatedVenue.soldOut) {
+                                artistData.hype = Math.min(1000, artistData.hype + 5);
+                            }
+
+                            // Notifications/Posts about the tour
+                            if (artistProfileForEmail && updatedVenue.soldOut) {
+                                 const postContent = `Sold out show in ${venue.city} tonight! Thank you all for coming out! ❤️ #TourLife`;
+                                 artistData.xPosts.unshift({
+                                    id: crypto.randomUUID(),
+                                    authorId: artistProfileForEmail.id,
+                                    content: postContent,
+                                    likes: Math.floor(ticketsSold * 0.5),
+                                    retweets: Math.floor(ticketsSold * 0.1),
+                                    views: Math.floor(ticketsSold * 10),
+                                    date: newDate
+                                 });
+                            }
+
+                            return {
+                                ...tour,
+                                venues: newVenues,
+                                currentVenueIndex: nextIndex,
+                                ticketsSold: tour.ticketsSold + ticketsSold,
+                                totalRevenue: tour.totalRevenue + revenue,
+                                status: isFinished ? 'finished' : 'active'
+                            };
+                        } else {
+                            // Should have been marked finished, but just in case
+                            return { ...tour, status: 'finished' };
+                        }
+                    }
+                    return tour;
+                });
+
                 // --- SOUNDTRACK OFFER LOGIC ---
                 if (artistData.weeksUntilNextSoundtrackOffer === undefined) {
                     // Initialize for games started before this feature was added.
@@ -911,6 +1045,91 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                     }
                 }
 
+                // --- VOGUE OFFER LOGIC ---
+                const totalWeeksElapsed = newDate.year * 52 + newDate.week;
+
+                if (
+                    artistProfileForEmail &&
+                    totalWeeksElapsed > 10 &&
+                    totalWeeksElapsed % 20 === 0 &&
+                    artistData.lastVogueOfferYear !== newDate.year
+                ) {
+                    const magazines: Array<'Vogue' | 'Vogue Korea' | 'Vogue Italy'> = ['Vogue', 'Vogue Korea', 'Vogue Italy'];
+                    const chosenMagazine = magazines[Math.floor(Math.random() * magazines.length)];
+                    const emailId = crypto.randomUUID();
+
+                    newEmails.push({
+                        id: emailId,
+                        sender: chosenMagazine,
+                        senderIcon: 'vogue',
+                        subject: `Invitation: Grace the Cover of ${chosenMagazine}`,
+                        body: `Dear ${artistProfileForEmail.name},\n\nYour recent impact on the music and fashion worlds has not gone unnoticed. We at ${chosenMagazine} would be honored to feature you on our upcoming cover.\n\nThis opportunity includes a full photoshoot and an in-depth interview. Please let us know if you're interested in this prestigious feature.\n\nSincerely,\nThe Editors`,
+                        date: newDate,
+                        isRead: false,
+                        offer: {
+                            type: 'vogueOffer',
+                            magazine: chosenMagazine,
+                            isAccepted: false,
+                            emailId: emailId,
+                        }
+                    });
+                    artistData.lastVogueOfferYear = newDate.year;
+                }
+
+                // --- FEATURE OFFER LOGIC ---
+                if (artistData.weeksUntilNextFeatureOffer === undefined) {
+                    artistData.weeksUntilNextFeatureOffer = Math.floor(Math.random() * (8 - 2 + 1)) + 2; // 2-8 weeks
+                }
+
+                artistData.weeksUntilNextFeatureOffer -= 1;
+
+                if (artistData.weeksUntilNextFeatureOffer <= 0 && artistProfileForEmail) {
+                    // Reset counter
+                    artistData.weeksUntilNextFeatureOffer = Math.floor(Math.random() * (8 - 2 + 1)) + 2;
+                    
+                    // Check conditions
+                    if (artistData.popularity > 30 && Math.random() < 0.5) { // 50% chance if eligible
+                        const emailId = crypto.randomUUID();
+                        const payout = Math.floor(50000 + (artistData.popularity * 2000 * (Math.random() * 1.5 + 0.5)));
+                        const songQuality = Math.floor(40 + (artistData.popularity / 2.5) + (Math.random() * 10));
+                        
+                        let promotion: FeatureOffer['promotion'] | undefined = undefined;
+                        if (Math.random() < 0.2) { // 20% chance of promotion
+                            promotion = {
+                                name: "Payola Push", // Generic promo name
+                                durationWeeks: Math.floor(Math.random() * 3) + 2 // 2-4 weeks
+                            };
+                        }
+
+                        let npcArtistName;
+                        do {
+                            npcArtistName = NPC_ARTIST_NAMES[Math.floor(Math.random() * NPC_ARTIST_NAMES.length)];
+                        } while (npcArtistName === artistProfileForEmail.name)
+                        
+
+                        const offer: FeatureOffer = {
+                            type: 'featureOffer',
+                            npcArtistName,
+                            payout,
+                            songQuality: Math.min(100, songQuality),
+                            promotion,
+                            isAccepted: false,
+                            emailId,
+                        };
+
+                        newEmails.push({
+                            id: emailId,
+                            sender: npcArtistName,
+                            senderIcon: 'feature',
+                            subject: 'Feature Request',
+                            body: `Hey ${artistProfileForEmail.name},\n\nBig fan of your work. I have a track that I think you'd sound perfect on.\n\nI can offer a payout of $${formatNumber(payout)} for your verse. The song quality is looking to be around ${Math.min(100, songQuality)}${promotion ? `, and we'll be running a ${promotion.name} for ${promotion.durationWeeks} weeks` : ''}.\n\nLet me know if you're interested.\n\nBest,\n${npcArtistName}`,
+                            date: newDate,
+                            isRead: false,
+                            offer: offer
+                        });
+                    }
+                }
+
                 let newHype: number;
                 const hypeMode = artistData.redMicPro.hypeMode || 'locked';
 
@@ -923,7 +1142,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 let newPopularity = artistData.popularity;
                 const lastRelease = [...artistData.releases].sort((a,b) => (b.releaseDate.year * 52 + b.releaseDate.week) - (a.releaseDate.year * 52 + a.releaseDate.week))[0];
                 if (lastRelease) {
-                    const weeksSinceLastRelease = (newDate.year * 52 + newDate.week) - (lastRelease.releaseDate.year * 52 + lastRelease.releaseDate.week);
+                    const weeksSinceLastRelease = (newDate.year * 52 + newDate.week) - (lastRelease.releaseDate.year * 52 + lastRelease.week);
                     if (weeksSinceLastRelease > 12) { // 3 months
                         newPopularity = Math.max(0, newPopularity - 0.25);
                     }
@@ -1076,6 +1295,24 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                     if (song.isReleased) {
                         const baseStreams = (song.quality ** 2) * 50;
                         let weeklyStreams = Math.floor(baseStreams * hypeMultiplier * labelMultiplier * popularityMultiplier * (Math.random() * 0.4 + 0.8)); 
+
+                        // Christmas Genre Seasonal Logic
+                        if (song.genre === 'Christmas') {
+                            const week = newDate.week;
+                            let christmasMultiplier = 1.0;
+
+                            if (week >= 50) { // Peak: Weeks 50-52
+                                christmasMultiplier = Math.random() * 5 + 15; // 15x to 20x
+                            } else if (week >= 45) { // Huge gains: Weeks 45-49
+                                christmasMultiplier = Math.random() * 5 + 8; // 8x to 13x
+                            } else if (week >= 41) { // Momentum: Weeks 41-44
+                                christmasMultiplier = Math.random() * 1.5 + 1.5; // 1.5x to 3x
+                            } else { // Off-season: Before week 41
+                                christmasMultiplier = Math.random() * 0.2 + 0.05; // 0.05x to 0.25x (significant reduction)
+                            }
+                            
+                            weeklyStreams = Math.floor(weeklyStreams * christmasMultiplier);
+                        }
 
                         if (song.pitchforkBoost) {
                             weeklyStreams = Math.floor(weeklyStreams * (Math.random() * 2 + 2));
@@ -1309,17 +1546,41 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 // Stream removal logic (every 4 weeks)
                 if (newDate.week % 4 === 0 && artistData.promotions.length > 0) {
                     let totalRemovedStreams = 0;
-                    artistData.songs = artistData.songs.map(song => {
-                        if (song.isReleased && song.streams > 1000) {
-                            const removalPercentage = Math.random() * 0.01 + 0.001; // 0.1% to 1.1%
-                            const streamsToRemove = Math.floor(song.streams * removalPercentage);
-                            if (streamsToRemove > 0) {
-                                totalRemovedStreams += streamsToRemove;
-                                return { ...song, streams: song.streams - streamsToRemove, removedStreams: (song.removedStreams || 0) + streamsToRemove };
+                    const newSongs = [...artistData.songs];
+                    
+                    const songPromotions = artistData.promotions.filter(p => p.itemType === 'song');
+
+                    for (const promo of songPromotions) {
+                        const songIndex = newSongs.findIndex(s => s.id === promo.itemId);
+                        if (songIndex !== -1) {
+                            const song = newSongs[songIndex];
+
+                            if (song.isReleased && song.streams > 1000) {
+                                const getRemovalPercentage = (boost: number): number => {
+                                    if (boost >= 30) return 0.80; // 80%
+                                    if (boost >= 10) return 0.25 + Math.random() * 0.15; // 25-40%
+                                    if (boost >= 4) return 0.10 + Math.random() * 0.10; // 10-20%
+                                    if (boost >= 2.5) return 0.05 + Math.random() * 0.05; // 5-10%
+                                    if (boost >= 1.5) return 0.01 + Math.random() * 0.04; // 1-5%
+                                    return 0.001 + Math.random() * 0.01; // fallback
+                                };
+                                
+                                const removalPercentage = getRemovalPercentage(promo.boostMultiplier);
+                                const streamsToRemove = Math.floor(song.streams * removalPercentage);
+
+                                if (streamsToRemove > 0) {
+                                    totalRemovedStreams += streamsToRemove;
+                                    newSongs[songIndex] = {
+                                        ...song,
+                                        streams: song.streams - streamsToRemove,
+                                        lastWeekStreams: (song.lastWeekStreams || 0) - streamsToRemove,
+                                        removedStreams: (song.removedStreams || 0) + streamsToRemove
+                                    };
+                                }
                             }
                         }
-                        return song;
-                    });
+                    }
+                    artistData.songs = newSongs;
 
                     if (totalRemovedStreams > 0) {
                         if(artistProfileForEmail){
@@ -1327,7 +1588,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                                 id: crypto.randomUUID(),
                                 sender: 'Spotify',
                                 subject: 'Adjustment to your stream counts',
-                                body: `Hi ${artistProfileForEmail.name},\n\nWe're writing to let you know that we've made an adjustment to your stream counts. After a routine review, we identified and removed approximately ${formatNumber(totalRemovedStreams)} artificial streams from your songs.\n\nThis is a standard process to ensure that our data is accurate and reflects genuine listener activity. For more information on artificial streams, please visit Spotify for Artists.\n\nThanks,\nThe Spotify Team`,
+                                body: `Hi ${artistProfileForEmail.name},\n\nWe're writing to let you know that we've made an adjustment to your stream counts. After a routine review, we identified and removed approximately ${formatNumber(totalRemovedStreams)} artificial streams from songs in your active promotional campaigns.\n\nThis is a standard process to ensure that our data is accurate and reflects genuine listener activity. For more information on artificial streams, please visit Spotify for Artists.\n\nThanks,\nThe Spotify Team`,
                                 date: newDate,
                                 isRead: false,
                                 senderIcon: 'spotify',
@@ -1620,6 +1881,31 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                         newEmails.push(popBaseEmail);
                     }
                 }
+
+                // --- GRAMMY SUBMISSION OFFER LOGIC ---
+                // This logic sends the yearly email inviting the player to submit for the GRAMMYs.
+                // It checks if an email for the current year has already been sent to avoid duplicates.
+                const hasGrammyEmailThisYear = artistData.inbox.some(e => 
+                    e.offer?.type === 'grammySubmission' && e.date.year === newDate.year
+                );
+
+                if (newDate.week === 40 && artistProfileForEmail && !hasGrammyEmailThisYear) {
+                    const emailId = crypto.randomUUID();
+                    newEmails.push({
+                        id: emailId,
+                        sender: 'Recording Academy',
+                        senderIcon: 'grammys',
+                        subject: `Submit Your Music for the ${newDate.year + 1} GRAMMY Awards`,
+                        body: `Hi ${artistProfileForEmail.name},\n\nThe submission window for the ${newDate.year + 1} GRAMMY Awards is now open. Please submit your eligible releases from this year for consideration.\n\nSubmissions close in a few weeks.\n\n- The Recording Academy`,
+                        date: newDate,
+                        isRead: false,
+                        offer: {
+                            type: 'grammySubmission',
+                            emailId: emailId,
+                            isSubmitted: false
+                        }
+                    });
+                }
                 
                 if (artistData.fanWarStatus) {
                     artistData.fanWarStatus.weeksRemaining -= 1;
@@ -1746,7 +2032,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                         // Since we don't store releaseDate on NPC albums explicitly in the type yet, we'll approximate by using the current list 
                         // and assuming ones generated this session belong to "this year". 
                         // A better way: In generateNpcAlbums, we could tag them, but for now let's use a heuristic based on index or assume all current `newNpcAlbums` are recent.
-                        // Actually, we can just use `state.npcAlbums` and filter/simulate.
                         return true; // Simplified: Consider all active NPC albums as contenders
                     }).map(album => {
                         // Simulate units for NPC albums. 
@@ -1809,6 +2094,35 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 artistData.inbox.push(...newEmails);
             }
 
+            // --- FEATURE SONG RELEASE LOGIC ---
+            const newNpcsWithReleases = [...newNpcsList];
+            newNpcsWithReleases.forEach(npc => {
+                if (npc.isPlayerFeature && !npc.isReleased && npc.releaseDate && npc.releaseDate.week === newDate.week && npc.releaseDate.year === newDate.year) {
+                    npc.isReleased = true;
+
+                    // Find which player artist was featured to send them the email
+                    const featuredArtist = allPlayerArtistsAndGroups.find(a => a.name === npc.featuring);
+                    if (featuredArtist && updatedArtistsData[featuredArtist.id]) {
+                        
+                        const releaseEmail: Email = {
+                            id: crypto.randomUUID(),
+                            sender: 'Spotify',
+                            senderIcon: 'spotify',
+                            subject: `New Release: "${npc.title}"`,
+                            body: `Hi ${featuredArtist.name},\n\nYour collaboration with ${npc.artist}, "${npc.title}", has been released today!\n\nIt is now available on your Spotify profile under the "Featured On" section.\n\n- The Spotify Team`,
+                            date: newDate,
+                            isRead: false,
+                            offer: {
+                                type: 'featureRelease',
+                                songTitle: npc.title,
+                                npcArtistName: npc.artist,
+                            }
+                        };
+                        updatedArtistsData[featuredArtist.id].inbox.push(releaseEmail);
+                    }
+                }
+            });
+
             // --- CHART CALCULATION ---
             const allPlayerSongsFlat = Object.values(updatedArtistsData).flatMap(d => d.songs);
             const allPlayerReleases = Object.values(updatedArtistsData).flatMap(d => d.releases);
@@ -1820,13 +2134,15 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                     return {
                         uniqueId: song.id, title: song.title, artist: artist?.name || 'Unknown',
                         weeklyStreams: song.lastWeekStreams, isPlayerSong: true, coverArt: song.coverArt, songId: song.id,
+                        genre: song.genre
                     }
                 });
             
-            const npcChartContenders = newNpcsList.map(npc => ({
+            const npcChartContenders = newNpcsWithReleases.map(npc => ({
                 uniqueId: npc.uniqueId, title: npc.title, artist: npc.artist,
                 weeklyStreams: Math.floor(npc.basePopularity * (Math.random() * 0.4 + 0.8)),
-                isPlayerSong: false, coverArt: NPC_COVER_ART, songId: undefined,
+                isPlayerSong: false, coverArt: npc.coverArt || NPC_COVER_ART, songId: undefined,
+                genre: npc.genre
             }));
             
             const allContenders = [...playerChartContenders, ...npcChartContenders];
@@ -1907,6 +2223,20 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 });
             });
 
+            // --- GENRE CHART CALCULATION ---
+            const { newChart: newHotPopSongs, newHistory: newHotPopSongsHistory } = calculateGenreChart(
+                allContenders, ['Pop'], state.hotPopSongs, state.hotPopSongsHistory
+            );
+            const { newChart: newHotRapRnb, newHistory: newHotRapRnbHistory } = calculateGenreChart(
+                allContenders, ['Hip Hop', 'R&B'], state.hotRapRnb, state.hotRapRnbHistory
+            );
+            const { newChart: newElectronicChart, newHistory: newElectronicChartHistory } = calculateGenreChart(
+                allContenders, ['Electronic'], state.electronicChart, state.electronicChartHistory
+            );
+            const { newChart: newCountryChart, newHistory: newCountryChartHistory } = calculateGenreChart(
+                allContenders, ['Country'], state.countryChart, state.countryChartHistory
+            );
+
             // --- ALBUM CHART CALCULATION ---
             const playerAlbumContenders = allPlayerReleases
                 .filter(r => r.type === 'EP' || r.type === 'Album' || r.type === 'Album (Deluxe)')
@@ -1942,7 +2272,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 });
 
             const npcAlbumContenders = newNpcAlbums.map(album => {
-                const albumSongs = album.songIds.map(id => newNpcsList.find(s => s.uniqueId === id)).filter(Boolean);
+                const albumSongs = album.songIds.map(id => newNpcsWithReleases.find(s => s.uniqueId === id)).filter(Boolean);
                 
                 const totalWeeklyStreams = albumSongs.reduce((sum, song) => {
                     if (!song) return sum;
@@ -2071,7 +2401,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                                     }
                                     if(genreMatch) {
                                         const avgQuality = releaseSongs.reduce((sum, s) => sum + s.quality, 0) / releaseSongs.length;
-                                        score = (avgQuality * 1.5) + ((release.firstWeekStreams || 0) / 200000);
+                                        score = (avgQuality * 2) + ((release.firstWeekStreams || 0) / 100000);
                                         coverArt = release.coverArt;
                                         isValid = true;
                                     }
@@ -2089,7 +2419,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                             const song = artistData.songs.find(s => s.id === sub.itemId);
                             if (song) {
                                 if (!genreFilter || song.genre === genreFilter) {
-                                    score = (song.quality * 1.5) + ((song.firstWeekStreams || 0) / 50000);
+                                    score = (song.quality * 2) + ((song.firstWeekStreams || 0) / 25000);
                                     coverArt = song.coverArt;
                                     isValid = true;
                                 }
@@ -2106,7 +2436,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                         newNpcAlbums.slice(0, numNpcContenders * 5)
                             .filter(album => {
                                 if (!genreFilter) return true;
-                                const albumSongs = album.songIds.map(id => newNpcsList.find(s => s.uniqueId === id)).filter((s): s is NpcSong => !!s);
+                                const albumSongs = album.songIds.map(id => newNpcsWithReleases.find(s => s.uniqueId === id)).filter((s): s is NpcSong => !!s);
                                 if (albumSongs.length === 0) return false;
                                 const genreCounts = albumSongs.reduce((acc, song) => {
                                     acc[song.genre] = (acc[song.genre] || 0) + 1;
@@ -2117,16 +2447,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                             })
                             .slice(0, numNpcContenders)
                             .forEach(album => {
-                                const albumSongs = album.songIds.map(id => newNpcsList.find(s => s.uniqueId === id)).filter(Boolean);
+                                const albumSongs = album.songIds.map(id => newNpcsWithReleases.find(s => s.uniqueId === id)).filter(Boolean);
                                 const avgPopularity = albumSongs.reduce((sum, s) => sum + (s?.basePopularity || 0), 0) / (albumSongs.length || 1);
-                                contenders.push({ id: album.uniqueId, name: album.title, artistName: album.artist, isPlayer: false, score: (avgPopularity / 75000) * 1.5, coverArt: album.coverArt });
+                                contenders.push({ id: album.uniqueId, name: album.title, artistName: album.artist, isPlayer: false, score: (avgPopularity / 100000) * 1.5, coverArt: album.coverArt });
                             });
                     } else if (categoryName !== 'Best New Artist') {
-                        newNpcsList.slice(0, numNpcContenders * 5)
+                        newNpcsWithReleases.slice(0, numNpcContenders * 5)
                             .filter(song => !genreFilter || song.genre === genreFilter)
                             .slice(0, numNpcContenders)
                             .forEach(song => {
-                                contenders.push({ id: song.uniqueId, name: song.title, artistName: song.artist, isPlayer: false, score: song.basePopularity / 75000, coverArt: NPC_COVER_ART });
+                                contenders.push({ id: song.uniqueId, name: song.title, artistName: song.artist, isPlayer: false, score: song.basePopularity / 100000, coverArt: NPC_COVER_ART });
                             });
                     } else {
                         [...new Set(newNpcAlbums.slice(0, numNpcContenders).map(a => a.artist))].slice(0, 5).forEach(artistName => {
@@ -2142,6 +2472,36 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 }
                 
                 newGrammyNominations = newNominations;
+
+                const majorCatsForPosts: GrammyAward['category'][] = ['Album of the Year', 'Record of the Year', 'Song of the Year', 'Best New Artist'];
+                const nominationPosts: XPost[] = [];
+                newNominations.forEach(category => {
+                    if (majorCatsForPosts.includes(category.name)) {
+                        const playerNominee = category.nominees.find(n => n.isPlayer);
+                        let content = `The nominees for ${category.name} at the ${newDate.year + 1} #GRAMMYs have been announced:\n\n`;
+                        content += category.nominees.map(n => `• ${n.isPlayer ? `**${n.name}**` : n.name}`).join('\n');
+                        
+                        const image = playerNominee?.coverArt || category.nominees[0]?.coverArt || undefined;
+
+                        nominationPosts.push({
+                            id: crypto.randomUUID(),
+                            authorId: 'popbase',
+                            content,
+                            image,
+                            likes: Math.floor(Math.random() * 50000) + 25000,
+                            retweets: Math.floor(Math.random() * 12000) + 5000,
+                            views: Math.floor(Math.random() * 1500000) + 500000,
+                            date: newDate,
+                        });
+                    }
+                });
+
+                if (nominationPosts.length > 0) {
+                    for (const artistId in updatedArtistsData) {
+                        updatedArtistsData[artistId].xPosts.unshift(...nominationPosts);
+                    }
+                }
+
 
                 for (const artistId in updatedArtistsData) {
                     const artistData = updatedArtistsData[artistId];
@@ -2162,6 +2522,18 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                         artistData.inbox.push({
                             id: emailId, sender: 'Recording Academy', senderIcon: 'grammys', subject: 'Congratulations! You\'re a GRAMMY Nominee!',
                             body, date: newDate, isRead: false, offer: { type: 'grammyNominations', emailId, hasPerformanceOffer }
+                        });
+
+                        const redCarpetEmailId = crypto.randomUUID();
+                        artistData.inbox.push({
+                            id: redCarpetEmailId,
+                            sender: 'Recording Academy',
+                            senderIcon: 'grammys',
+                            subject: 'Invitation: GRAMMYs Red Carpet',
+                            body: `Hi ${artistProfile.name},\n\nWe're excited to invite you to walk the red carpet at this year's GRAMMY Awards ceremony. Pop Base and other outlets will be covering the event.\n\nPlease let us know if you'll be attending by sharing your look.\n\n- The Recording Academy`,
+                            date: newDate,
+                            isRead: false,
+                            offer: { type: 'grammyRedCarpet', emailId: redCarpetEmailId }
                         });
                     }
                 }
@@ -2184,12 +2556,10 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 for(const artistId in updatedArtistsData) {
                     const artistData = updatedArtistsData[artistId];
                     const artistProfile = allPlayerArtistsAndGroups.find(a => a.id === artistId);
-                    let hasNominations = false;
                     
                     for (const category of state.grammyCurrentYearNominations) {
                         const nomination = category.nominees.find(n => n.isPlayer && n.artistName === artistProfile?.name);
                         if (nomination) {
-                            hasNominations = true;
                             const isWinner = category.winner?.id === nomination.id && category.winner.artistName === nomination.artistName;
                             if (isWinner) {
                                 artistData.popularity = Math.min(100, artistData.popularity + 5);
@@ -2200,15 +2570,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                                 isWinner
                             });
                         }
-                    }
-
-                    if (hasNominations && artistProfile) {
-                        const emailId = crypto.randomUUID();
-                        artistData.inbox.push({
-                            id: emailId, sender: 'Recording Academy', senderIcon: 'grammys', subject: 'Invitation: GRAMMYs Red Carpet',
-                            body: `Hi ${artistProfile.name},\n\nWe're excited to invite you to walk the red carpet at this year's GRAMMY Awards ceremony. Pop Base and other outlets will be covering the event.\n\nPlease let us know if you'll be attending by sharing your look.\n\n- The Recording Academy`,
-                            date: newDate, isRead: false, offer: { type: 'grammyRedCarpet', emailId }
-                        });
                     }
                 }
                 
@@ -2293,8 +2654,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                     chartHistory: newChartHistory,
                     albumChartHistory: newAlbumChartHistory,
                     spotifyGlobal50: newSpotifyGlobal50,
+                    hotPopSongs: newHotPopSongs,
+                    hotRapRnb: newHotRapRnb,
+                    electronicChart: newElectronicChart,
+                    countryChart: newCountryChart,
+                    hotPopSongsHistory: newHotPopSongsHistory,
+                    hotRapRnbHistory: newHotRapRnbHistory,
+                    electronicChartHistory: newElectronicChartHistory,
+                    countryChartHistory: newCountryChartHistory,
                     spotifyNewEntries: newEntriesCount,
-                    npcs: newNpcsList,
+                    npcs: newNpcsWithReleases,
                     npcAlbums: newNpcAlbums,
                     grammyCurrentYearNominations: newGrammyNominations,
                     contractRenewalOffer: contractRenewalForActivePlayer,
@@ -2311,8 +2680,16 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 chartHistory: newChartHistory,
                 albumChartHistory: newAlbumChartHistory,
                 spotifyGlobal50: newSpotifyGlobal50,
+                hotPopSongs: newHotPopSongs,
+                hotRapRnb: newHotRapRnb,
+                electronicChart: newElectronicChart,
+                countryChart: newCountryChart,
+                hotPopSongsHistory: newHotPopSongsHistory,
+                hotRapRnbHistory: newHotRapRnbHistory,
+                electronicChartHistory: newElectronicChartHistory,
+                countryChartHistory: newCountryChartHistory,
                 spotifyNewEntries: newEntriesCount,
-                npcs: newNpcsList,
+                npcs: newNpcsWithReleases,
                 npcAlbums: newNpcAlbums,
                 grammyCurrentYearNominations: newGrammyNominations,
             };
@@ -2351,12 +2728,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
             let newEmails: Email[] = [];
             const artistName = state.soloArtist?.name || state.group?.name || 'Artist';
+
             if (releaseWithLabel.type === 'Single') {
                 const song = activeData.songs.find(s => s.id === releaseWithLabel.songIds[0]);
                 if (song) {
-                    const emailId = crypto.randomUUID();
+                    const emailIdGenius = crypto.randomUUID();
                     newEmails.push({
-                        id: emailId,
+                        id: emailIdGenius,
                         sender: 'Genius',
                         subject: `Verified Interview for "${song.title}"?`,
                         body: `Hey ${artistName},\n\nWe're big fans of your new single "${song.title}" over at Genius. We'd love to have you for our 'Verified' series to break down the lyrics and meaning behind the track.\n\nLet us know if you're interested.\n\nBest,\nThe Genius Team`,
@@ -2367,9 +2745,48 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                             type: 'geniusInterview',
                             songId: song.id,
                             isAccepted: false,
-                            emailId: emailId,
+                            emailId: emailIdGenius,
                         }
                     });
+
+                    // On The Radar / TRSH'D offer for Hip Hop singles
+                    if (song.genre === 'Hip Hop' && Math.random() < 0.75) { // 75% chance
+                        const platform = Math.random() < 0.5 ? 'On The Radar' : "TRSH'D";
+                        const emailIdPlatform = crypto.randomUUID();
+                        if (platform === 'On The Radar') {
+                            newEmails.push({
+                                id: emailIdPlatform,
+                                sender: 'On The Radar',
+                                senderIcon: 'ontheradar',
+                                subject: `Performance Invite for "${song.title}"`,
+                                body: `Yo ${artistName},\n\nWe've been hearing the buzz around your new single "${song.title}". We'd like to invite you to our studio for an "On The Radar" freestyle performance.\n\nThis is a huge look. Let us know.\n\n- On The Radar Team`,
+                                date: releaseWithLabel.releaseDate,
+                                isRead: false,
+                                offer: {
+                                    type: 'onTheRadarOffer',
+                                    songId: song.id,
+                                    isAccepted: false,
+                                    emailId: emailIdPlatform,
+                                }
+                            });
+                        } else { // TRSH'D
+                             newEmails.push({
+                                id: emailIdPlatform,
+                                sender: "TRSH'D",
+                                senderIcon: 'trshd',
+                                subject: `TRSH'D Performance: ${song.title}`,
+                                body: `What's good ${artistName},\n\nYour new track "${song.title}" is making waves. We want you to come through and lay down a performance for TRSH'D.\n\nHit us back if you're down.\n\n- TRSH'D`,
+                                date: releaseWithLabel.releaseDate,
+                                isRead: false,
+                                offer: {
+                                    type: 'trshdOffer',
+                                    songId: song.id,
+                                    isAccepted: false,
+                                    emailId: emailIdPlatform,
+                                }
+                            });
+                        }
+                    }
                 }
             }
 
@@ -2616,7 +3033,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 ? allCustomLabels.find(l => l.id === contract.labelId)
                 : LABELS.find(l => l.id === contract.labelId);
             
-            const allPlayerArtistsAndGroups: (Artist | Group)[] = state.careerMode === 'solo' && state.soloArtist ? [state.soloArtist] : (state.group ? [state.group, ...state.group.members] : []);
             const artist = allPlayerArtistsAndGroups.find(a => a.id === contract.artistId);
 
             let newPosts: XPost[] = [];
@@ -2808,6 +3224,124 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             return {
                 ...state,
                 activeGeniusOffer: null,
+                currentView: 'inbox',
+            };
+        }
+        case 'ACCEPT_ONTHERADAR_OFFER': {
+            if (!state.activeArtistId) return state;
+            const { songId, emailId } = action.payload;
+            const activeData = state.artistsData[state.activeArtistId];
+            const updatedInbox = activeData.inbox.map(email => {
+                if (email.id === emailId && email.offer?.type === 'onTheRadarOffer') {
+                    return { ...email, offer: { ...email.offer, isAccepted: true } };
+                }
+                return email;
+            });
+
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: {
+                        ...activeData,
+                        hype: Math.min(1000, activeData.hype + 10),
+                        inbox: updatedInbox,
+                    }
+                },
+                activeOnTheRadarOffer: { songId, emailId },
+                currentView: 'createOnTheRadarPerformance',
+            };
+        }
+        case 'CREATE_ONTHERADAR_PERFORMANCE': {
+            if (!state.activeArtistId || !state.activeOnTheRadarOffer) return state;
+            const { video } = action.payload;
+            const activeData = state.artistsData[state.activeArtistId];
+
+            const updatedSongs = activeData.songs.map(song => {
+                if (song.id === state.activeOnTheRadarOffer!.songId) {
+                    return { ...song, pitchforkBoost: true }; // Re-using for generic boost
+                }
+                return song;
+            });
+
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: {
+                        ...activeData,
+                        videos: [...activeData.videos, video],
+                        songs: updatedSongs,
+                        hype: Math.min(1000, activeData.hype + 20),
+                    }
+                },
+                activeOnTheRadarOffer: null,
+                currentView: 'youtube',
+            };
+        }
+        case 'CANCEL_ONTHERADAR_OFFER': {
+            return {
+                ...state,
+                activeOnTheRadarOffer: null,
+                currentView: 'inbox',
+            };
+        }
+        case 'ACCEPT_TRSHD_OFFER': {
+            if (!state.activeArtistId) return state;
+            const { songId, emailId } = action.payload;
+            const activeData = state.artistsData[state.activeArtistId];
+            const updatedInbox = activeData.inbox.map(email => {
+                if (email.id === emailId && email.offer?.type === 'trshdOffer') {
+                    return { ...email, offer: { ...email.offer, isAccepted: true } };
+                }
+                return email;
+            });
+
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: {
+                        ...activeData,
+                        hype: Math.min(1000, activeData.hype + 10),
+                        inbox: updatedInbox,
+                    }
+                },
+                activeTrshdOffer: { songId, emailId },
+                currentView: 'createTrshdPerformance',
+            };
+        }
+        case 'CREATE_TRSHD_PERFORMANCE': {
+            if (!state.activeArtistId || !state.activeTrshdOffer) return state;
+            const { video } = action.payload;
+            const activeData = state.artistsData[state.activeArtistId];
+
+            const updatedSongs = activeData.songs.map(song => {
+                if (song.id === state.activeTrshdOffer!.songId) {
+                    return { ...song, pitchforkBoost: true }; // Re-using for generic boost
+                }
+                return song;
+            });
+
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: {
+                        ...activeData,
+                        videos: [...activeData.videos, video],
+                        songs: updatedSongs,
+                        hype: Math.min(1000, activeData.hype + 20),
+                    }
+                },
+                activeTrshdOffer: null,
+                currentView: 'youtube',
+            };
+        }
+        case 'CANCEL_TRSHD_OFFER': {
+            return {
+                ...state,
+                activeTrshdOffer: null,
                 currentView: 'inbox',
             };
         }
@@ -3183,7 +3717,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
             const updatedArtistsData = { ...state.artistsData };
 
-            const allPlayerArtistsAndGroups: (Artist | Group)[] = state.careerMode === 'solo' && state.soloArtist ? [state.soloArtist] : (state.group ? [state.group, ...state.group.members] : []);
             const artist = allPlayerArtistsAndGroups.find(a => a.id === state.activeArtistId);
             let newPosts: XPost[] = [];
 
@@ -3240,7 +3773,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 ...state,
                 artistsData: updatedArtistsData,
                 currentView: 'game',
-                activeTab: 'Labels',
+                activeTab: 'Business',
             };
         }
         case 'DELETE_SONG': {
@@ -3447,7 +3980,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 albumsReleased: 0,
             };
 
-            const allPlayerArtistsAndGroups: (Artist | Group)[] = state.careerMode === 'solo' && state.soloArtist ? [state.soloArtist] : (state.group ? [state.group, ...state.group.members] : []);
             const artist = allPlayerArtistsAndGroups.find(a => a.id === state.activeArtistId);
             const label = LABELS.find(l => l.id === labelId);
             let newPosts: XPost[] = [];
@@ -4062,6 +4594,79 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 currentView: 'inbox',
             };
         }
+        case 'ACCEPT_FEATURE_OFFER': {
+            if (!state.activeArtistId) return state;
+            const activeData = state.artistsData[state.activeArtistId];
+            const { emailId, ...offerDetails } = action.payload;
+
+            const updatedInbox = activeData.inbox.map(email => {
+                if (email.id === emailId && email.offer?.type === 'featureOffer') {
+                    return { ...email, offer: { ...email.offer, isAccepted: true } };
+                }
+                return email;
+            });
+            
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: {
+                        ...activeData,
+                        inbox: updatedInbox
+                    }
+                },
+                activeFeatureOffer: { ...offerDetails, emailId },
+                currentView: 'createFeature',
+            };
+        }
+        case 'CANCEL_FEATURE_OFFER': {
+            return {
+                ...state,
+                activeFeatureOffer: null,
+                currentView: 'inbox',
+            };
+        }
+        case 'CREATE_FEATURE_SONG': {
+            if (!state.activeArtistId || !state.activeFeatureOffer) return state;
+            
+            const activeData = state.artistsData[state.activeArtistId];
+            const activeArtist = allPlayerArtistsAndGroups.find(a => a.id === state.activeArtistId);
+            if (!activeArtist) return state;
+
+            const { songTitle, coverArt, releaseDate } = action.payload;
+            const { npcArtistName, payout, songQuality, promotion } = state.activeFeatureOffer;
+
+            const newNpcSong: NpcSong = {
+                uniqueId: `playerfeat_${crypto.randomUUID()}`,
+                title: `${songTitle} (feat. ${activeArtist.name})`,
+                artist: npcArtistName,
+                genre: GENRES[Math.floor(Math.random() * GENRES.length)],
+                basePopularity: songQuality * 100000,
+                featuring: activeArtist.name,
+                isPlayerFeature: true,
+                coverArt: coverArt,
+                isReleased: false,
+                releaseDate: releaseDate,
+                promotion: promotion ? { name: promotion.name, boost: 2.0 } : undefined,
+                promoWeeksLeft: promotion ? promotion.durationWeeks : undefined,
+            };
+
+            const updatedData = {
+                ...activeData,
+                money: activeData.money + payout,
+            };
+
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: updatedData
+                },
+                npcs: [...state.npcs, newNpcSong],
+                activeFeatureOffer: null,
+                currentView: 'game'
+            };
+        }
         case 'SELECT_SOUNDTRACK': {
              return {
                 ...state,
@@ -4245,6 +4850,114 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             return {
                 ...state,
                 artistsData: updatedArtistsData,
+            };
+        }
+        case 'ACCEPT_VOGUE_OFFER': {
+            if (!state.activeArtistId) return state;
+            const { magazine, emailId } = action.payload;
+            const activeData = state.artistsData[state.activeArtistId];
+            const updatedInbox = activeData.inbox.map(email => {
+                if (email.id === emailId && email.offer?.type === 'vogueOffer') {
+                    return { ...email, offer: { ...email.offer, isAccepted: true } };
+                }
+                return email;
+            });
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: { ...activeData, inbox: updatedInbox },
+                },
+                activeVogueOffer: { magazine, emailId },
+                currentView: 'createVogueFeature'
+            };
+        }
+        case 'CANCEL_VOGUE_OFFER': {
+            return {
+                ...state,
+                activeVogueOffer: null,
+                currentView: 'inbox',
+            };
+        }
+        case 'CREATE_VOGUE_FEATURE': {
+            if (!state.activeArtistId || !state.activeVogueOffer) return state;
+            const { photoshoot } = action.payload;
+            const activeData = state.artistsData[state.activeArtistId];
+            const activeArtist = state.soloArtist || state.group;
+            if (!activeArtist) return state;
+    
+            const newPosts: XPost[] = [];
+    
+            // PopBase posts
+            newPosts.push({
+                id: crypto.randomUUID(),
+                authorId: 'popbase',
+                content: `${activeArtist.name} is gorgeous on the cover of ${photoshoot.magazine}.`,
+                image: photoshoot.coverImage,
+                likes: Math.floor(Math.random() * 40000) + 25000,
+                retweets: Math.floor(Math.random() * 8000) + 4000,
+                views: Math.floor(Math.random() * 800000) + 300000,
+                date: state.date
+            });
+    
+            newPosts.push({
+                id: crypto.randomUUID(),
+                authorId: 'popbase',
+                content: `${activeArtist.name} looks flawless for ${photoshoot.magazine}.`,
+                image: photoshoot.photoshootImages[0], // Use one of the photoshoot images
+                likes: Math.floor(Math.random() * 20000) + 10000,
+                retweets: Math.floor(Math.random() * 3000) + 1000,
+                views: Math.floor(Math.random() * 400000) + 150000,
+                date: state.date
+            });
+            
+            const interviewAnswer = photoshoot.interviewAnswers[0]; // Take the first Q&A
+            newPosts.push({
+                id: crypto.randomUUID(),
+                authorId: 'popbase',
+                content: `${activeArtist.name} tells ${photoshoot.magazine} the craziest rumor they have heard about themself:\n\n“${interviewAnswer.answer}”`,
+                image: photoshoot.photoshootImages[1],
+                likes: Math.floor(Math.random() * 80000) + 50000,
+                retweets: Math.floor(Math.random() * 10000) + 5000,
+                views: Math.floor(Math.random() * 5000000) + 1000000,
+                date: state.date
+            });
+    
+            // TMZ post (shady)
+            const shadyComments = [
+                `Is that... hair? ${activeArtist.name}'s new ${photoshoot.magazine} cover has people talking, and not in a good way.`,
+                `Sources say ${activeArtist.name} was a nightmare on the set of their ${photoshoot.magazine} shoot. Diva alert?`,
+                `Another magazine cover for ${activeArtist.name}. Groundbreaking. 🙄`,
+                `Someone's trying hard to stay relevant. ${activeArtist.name}'s ${photoshoot.magazine} spread is... a choice.`
+            ];
+            
+            newPosts.push({
+                id: crypto.randomUUID(),
+                authorId: 'tmz',
+                content: shadyComments[Math.floor(Math.random() * shadyComments.length)],
+                image: photoshoot.coverImage,
+                likes: Math.floor(Math.random() * 5000) + 1000,
+                retweets: Math.floor(Math.random() * 1500) + 500,
+                views: Math.floor(Math.random() * 400000) + 100000,
+                date: state.date
+            });
+    
+            const updatedData = {
+                ...activeData,
+                voguePhotoshoots: [...(activeData.voguePhotoshoots || []), photoshoot],
+                xPosts: [...newPosts, ...activeData.xPosts],
+                hype: Math.min(1000, activeData.hype + 50),
+                popularity: Math.min(100, activeData.popularity + 5),
+            };
+            
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: updatedData,
+                },
+                activeVogueOffer: null,
+                currentView: 'game',
             };
         }
         default:

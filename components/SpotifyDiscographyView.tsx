@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { useGame } from '../context/GameContext';
 import { Release, SoundtrackAlbum } from '../types';
@@ -45,7 +44,9 @@ const SpotifyDiscographyView: React.FC<{ onBack: () => void; onSelectRelease: (r
     const { releases } = activeArtistData;
 
     const sortedReleases = useMemo(() => {
-        return [...releases].sort((a, b) => (b.releaseDate.year * 52 + b.releaseDate.week) - (a.releaseDate.year * 52 + a.releaseDate.week));
+        return [...releases]
+            .filter(r => !r.soundtrackInfo)
+            .sort((a, b) => (b.releaseDate.year * 52 + b.releaseDate.week) - (a.releaseDate.year * 52 + a.releaseDate.week));
     }, [releases]);
 
     const latestRelease = sortedReleases.length > 0 ? sortedReleases[0] : null;

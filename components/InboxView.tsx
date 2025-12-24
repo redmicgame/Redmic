@@ -13,6 +13,10 @@ import TonightShowIcon from './icons/TonightShowIcon';
 import TrophyIcon from './icons/TrophyIcon';
 import MusicNoteIcon from './icons/MusicNoteIcon';
 import ConfirmationModal from './ConfirmationModal';
+import VogueIcon from './icons/VogueIcon';
+import UserIcon from './icons/UserIcon';
+import OnTheRadarIcon from './icons/OnTheRadarIcon';
+import TrshdIcon from './icons/TrshdIcon';
 
 const SenderAvatar: React.FC<{ email: Email }> = ({ email }) => {
     const { sender, senderIcon } = email;
@@ -48,6 +52,20 @@ const SenderAvatar: React.FC<{ email: Email }> = ({ email }) => {
             </div>
         )
     }
+    if (senderIcon === 'ontheradar') {
+        return (
+            <div className="w-10 h-10 rounded-full bg-black border border-green-500 flex items-center justify-center p-1">
+                <OnTheRadarIcon className="w-full h-full text-green-400" />
+            </div>
+        )
+    }
+    if (senderIcon === 'trshd') {
+        return (
+            <div className="w-10 h-10 rounded-full bg-[#FFC700] flex items-center justify-center p-1">
+                <TrshdIcon className="w-full h-full text-black" />
+            </div>
+        )
+    }
     if (senderIcon === 'fallon') {
         return (
             <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center p-1">
@@ -73,6 +91,20 @@ const SenderAvatar: React.FC<{ email: Email }> = ({ email }) => {
         return (
              <div className="w-10 h-10 rounded-full bg-[#00aff0] flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2.5-8.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-2.5 4c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
+            </div>
+        )
+    }
+    if (senderIcon === 'vogue') {
+        return (
+            <div className="w-10 h-10 rounded-full bg-black border border-zinc-500 flex items-center justify-center p-1">
+                <VogueIcon className="w-full h-full text-white" />
+            </div>
+        )
+    }
+    if (senderIcon === 'feature') {
+        return (
+            <div className="w-10 h-10 rounded-full bg-zinc-600 flex items-center justify-center">
+                <UserIcon className="w-6 h-6 text-white" />
             </div>
         )
     }
@@ -126,6 +158,12 @@ const EmailDetailView: React.FC<{ email: Email; onBack: () => void }> = ({ email
             case 'geniusInterview':
                  dispatch({ type: 'ACCEPT_GENIUS_OFFER', payload: { songId: email.offer.songId, emailId: email.id } });
                  break;
+            case 'onTheRadarOffer':
+                dispatch({ type: 'ACCEPT_ONTHERADAR_OFFER', payload: { songId: email.offer.songId, emailId: email.id } });
+                break;
+            case 'trshdOffer':
+                dispatch({ type: 'ACCEPT_TRSHD_OFFER', payload: { songId: email.offer.songId, emailId: email.id } });
+                break;
             case 'fallonOffer':
                 dispatch({ type: 'ACCEPT_FALLON_OFFER', payload: { releaseId: email.offer.releaseId, offerType: email.offer.offerType, emailId: email.id } });
                 break;
@@ -145,6 +183,12 @@ const EmailDetailView: React.FC<{ email: Email; onBack: () => void }> = ({ email
                 break;
             case 'soundtrackOffer':
                 setShowSoundtrackConfirm(true);
+                break;
+            case 'vogueOffer':
+                dispatch({ type: 'ACCEPT_VOGUE_OFFER', payload: { magazine: email.offer.magazine, emailId: email.id }});
+                break;
+            case 'featureOffer':
+                dispatch({ type: 'ACCEPT_FEATURE_OFFER', payload: email.offer });
                 break;
         }
     };
@@ -171,6 +215,8 @@ const EmailDetailView: React.FC<{ email: Email; onBack: () => void }> = ({ email
                 </div>
             )
         }
+        
+        if (email.offer.type === 'featureRelease') return null;
 
         let buttonText = '';
         let buttonClass = '';
@@ -183,6 +229,18 @@ const EmailDetailView: React.FC<{ email: Email; onBack: () => void }> = ({ email
                 buttonText = "Accept & Create 'Verified' Video";
                 buttonClass = "bg-yellow-400 hover:bg-yellow-500 text-black shadow-yellow-400/20";
                 acceptedText = "Genius Offer Accepted";
+                isAccepted = email.offer.isAccepted;
+                break;
+            case 'onTheRadarOffer':
+                buttonText = "Accept On The Radar Performance";
+                buttonClass = "bg-green-500 hover:bg-green-600 text-white shadow-green-500/20";
+                acceptedText = "On The Radar Offer Accepted";
+                isAccepted = email.offer.isAccepted;
+                break;
+            case 'trshdOffer':
+                buttonText = "Accept TRSH'D Performance";
+                buttonClass = "bg-[#FFC700] hover:bg-yellow-500 text-black shadow-yellow-400/20";
+                acceptedText = "TRSH'D Offer Accepted";
                 isAccepted = email.offer.isAccepted;
                 break;
             case 'fallonOffer':
@@ -223,6 +281,18 @@ const EmailDetailView: React.FC<{ email: Email; onBack: () => void }> = ({ email
                 buttonText = `Contribute to "${email.offer.albumTitle}"`;
                 buttonClass = "bg-purple-500 hover:bg-purple-600 text-white shadow-purple-500/20";
                 acceptedText = "Soundtrack Contribution Accepted";
+                isAccepted = email.offer.isAccepted;
+                break;
+            case 'vogueOffer':
+                buttonText = `Accept ${email.offer.magazine} Cover`;
+                buttonClass = "bg-zinc-200 hover:bg-zinc-300 text-black";
+                acceptedText = "Vogue Offer Accepted";
+                isAccepted = email.offer.isAccepted;
+                break;
+            case 'featureOffer':
+                buttonText = `Accept Feature`;
+                buttonClass = "bg-green-500 hover:bg-green-600 text-white shadow-green-500/20";
+                acceptedText = "Feature Accepted";
                 isAccepted = email.offer.isAccepted;
                 break;
         }

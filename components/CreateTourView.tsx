@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import { VENUES, TOUR_TIER_REQUIREMENTS, TOUR_TICKET_PRICE_SUGGESTIONS } from '../constants';
@@ -13,14 +14,15 @@ const CreateTourView: React.FC = () => {
     const [tourName, setTourName] = useState('');
     const [bannerImage, setBannerImage] = useState<string | null>(null);
     const [tier, setTier] = useState<TourTier | null>(null);
-    const [selectedVenues, setSelectedVenues] = useState<any[]>([]);
+    const [venuesForSelection, setVenuesForSelection] = useState<(typeof VENUES[TourTier][0] & {id: string})[]>([]);
+    const [chosenVenueIds, setChosenVenueIds] = useState<Set<string>>(new Set());
     const [ticketPrice, setTicketPrice] = useState(0);
     const [setlist, setSetlist] = useState<Set<string>>(new Set());
     const [error, setError] = useState('');
 
     if (!activeArtistData || !activeArtist) return null;
     const { popularity, songs } = activeArtistData;
-    const releasedSongs = useMemo(() => songs.filter(s => s.isReleased), [songs]);
+    const allSongs = useMemo(() => songs, [songs]);
 
     const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -34,8 +36,19 @@ const CreateTourView: React.FC = () => {
     const handleTierSelect = (selectedTier: TourTier) => {
         setTier(selectedTier);
         setTicketPrice(TOUR_TICKET_PRICE_SUGGESTIONS[selectedTier]);
-        setSelectedVenues(VENUES[selectedTier].map(v => ({...v, id: crypto.randomUUID() })));
+        setVenuesForSelection(VENUES[selectedTier].map(v => ({...v, id: crypto.randomUUID() })));
+        setChosenVenueIds(new Set());
         setStep(2);
+    };
+
+    const handleToggleVenue = (venueId: string) => {
+        const newSelection = new Set(chosenVenueIds);
+        if (newSelection.has(venueId)) {
+            newSelection.delete(venueId);
+        } else {
+            newSelection.add(venueId);
+        }
+        setChosenVenueIds(newSelection);
     };
 
     const handleToggleSetlist = (songId: string) => {
@@ -50,18 +63,28 @@ const CreateTourView: React.FC = () => {
             setError('Please fill out all fields.'); return;
         }
 
-        const newTour: Tour = {
-            id: crypto.randomUUID(),
-            artistId: activeArtist.id,
-            name: tourName.trim(),
-            bannerImage: bannerImage,
-            venues: selectedVenues.map(v => ({
+        const finalVenues = venuesForSelection
+            .filter(v => chosenVenueIds.has(v.id))
+            .map(v => ({
                 ...v,
                 ticketPrice: ticketPrice,
                 soldOut: false,
                 revenue: 0,
                 ticketsSold: 0,
-            })),
+            }));
+        
+        if (finalVenues.length === 0) {
+            setError('You must select at least one venue for your tour.');
+            setStep(2);
+            return;
+        }
+
+        const newTour: Tour = {
+            id: crypto.randomUUID(),
+            artistId: activeArtist.id,
+            name: tourName.trim(),
+            bannerImage: bannerImage,
+            venues: finalVenues,
             setlist: Array.from(setlist),
             status: 'planning',
             currentVenueIndex: 0,
@@ -99,31 +122,39 @@ const CreateTourView: React.FC = () => {
             case 2: // Venues and Pricing
                 return (
                     <div className="space-y-4">
-                        <h2 className="text-xl font-bold">{tier} Tour</h2>
+                        <h2 className="text-xl font-bold">{tier} Tour ({chosenVenueIds.size} shows)</h2>
                         <div>
                             <label className="block text-sm font-medium text-zinc-300">Ticket Price</label>
                             <input type="number" value={ticketPrice} onChange={e => setTicketPrice(Number(e.target.value))} className="mt-1 w-full bg-zinc-700 p-2 rounded-md" />
                         </div>
-                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                            {selectedVenues.map(v => (
-                                <div key={v.name} className="bg-zinc-800 p-2 rounded-md flex justify-between">
-                                    <div><p className="font-semibold">{v.name}</p><p className="text-xs text-zinc-400">{v.city}</p></div>
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                            {venuesForSelection.map(v => (
+                                <button key={v.id} onClick={() => handleToggleVenue(v.id)} className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${chosenVenueIds.has(v.id) ? 'bg-red-500/20' : 'bg-zinc-800'}`}>
+                                    <input type="checkbox" readOnly checked={chosenVenueIds.has(v.id)} className="form-checkbox h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-red-600 focus:ring-red-500" />
+                                    <div className="flex-grow">
+                                        <p className="font-semibold">{v.name}</p>
+                                        <p className="text-xs text-zinc-400">{v.city}</p>
+                                    </div>
                                     <p className="text-sm text-zinc-300">{formatNumber(v.capacity)} cap.</p>
-                                </div>
+                                </button>
                             ))}
                         </div>
-                        <button onClick={() => setStep(3)} className="w-full bg-red-600 p-3 rounded-lg font-bold">Next: Setlist</button>
+                        <button onClick={() => setStep(3)} disabled={chosenVenueIds.size === 0} className="w-full bg-red-600 p-3 rounded-lg font-bold disabled:bg-zinc-600">Next: Setlist</button>
                     </div>
                 );
             case 3: // Setlist
                 return (
                      <div className="space-y-4">
                         <h2 className="text-xl font-bold">Setlist ({setlist.size})</h2>
-                        <div className="space-y-2 max-h-80 overflow-y-auto">
-                            {releasedSongs.map(song => (
+                        <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+                            {allSongs.map(song => (
                                 <button key={song.id} onClick={() => handleToggleSetlist(song.id)} className={`w-full flex items-center gap-3 p-2 rounded-lg ${setlist.has(song.id) ? 'bg-red-500/20' : 'bg-zinc-800'}`}>
+                                    <input type="checkbox" readOnly checked={setlist.has(song.id)} className="form-checkbox h-5 w-5 rounded bg-zinc-700 border-zinc-600 text-red-600 focus:ring-red-500" />
                                     <img src={song.coverArt} className="w-12 h-12 rounded-md"/>
-                                    <p className="font-semibold text-left">{song.title}</p>
+                                    <div className="text-left">
+                                        <p className="font-semibold">{song.title}</p>
+                                        {!song.isReleased && <p className="text-xs font-bold text-yellow-300 bg-yellow-900/50 px-2 py-0.5 rounded-full inline-block">Unreleased</p>}
+                                    </div>
                                 </button>
                             ))}
                         </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useGame } from '../context/GameContext';
-import { Release, SoundtrackAlbum } from '../types';
+import { NpcSong, Release, SoundtrackAlbum } from '../types';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
 
 const ReleaseItem: React.FC<{ release: Release, large?: boolean, onClick: () => void }> = ({ release, large = false, onClick }) => {
@@ -35,10 +35,22 @@ const CompilationItem: React.FC<{ compilation: SoundtrackAlbum, large?: boolean,
     );
 };
 
+const FeaturedSongItem: React.FC<{ song: NpcSong, onClick: () => void }> = ({ song, onClick }) => {
+    return (
+        <button onClick={onClick} className="w-full text-left flex items-center gap-4 group cursor-pointer">
+            <img src={song.coverArt} alt={song.title} className="w-16 h-16 rounded-md object-cover" />
+            <div>
+                <p className="font-bold text-white text-lg">{song.title}</p>
+                <p className="text-sm text-zinc-400">{song.releaseDate?.year} • {song.artist}</p>
+            </div>
+        </button>
+    );
+};
+
 
 const SpotifyDiscographyView: React.FC<{ onBack: () => void; onSelectRelease: (releaseId: string) => void; onSelectCompilation: (compilationId: string) => void; }> = ({ onBack, onSelectRelease, onSelectCompilation }) => {
-    const { gameState, activeArtistData } = useGame();
-    const { soundtrackAlbums } = gameState;
+    const { gameState, activeArtistData, activeArtist } = useGame();
+    const { soundtrackAlbums, npcs } = gameState;
     const [filter, setFilter] = useState<'Albums' | 'Singles and EPs' | 'Compilations' | 'Featured'>('Albums');
 
     if (!activeArtistData) return null;
@@ -69,6 +81,12 @@ const SpotifyDiscographyView: React.FC<{ onBack: () => void; onSelectRelease: (r
         }
         return list;
     }, [filteredReleases, latestRelease]);
+
+    const featuredOn = useMemo(() => {
+        if (!activeArtist) return [];
+        return npcs.filter(npc => npc.isPlayerFeature && npc.featuring === activeArtist.name && npc.isReleased)
+            .sort((a,b) => (b.releaseDate!.year*52 + b.releaseDate!.week) - (a.releaseDate!.year*52 + a.releaseDate!.week));
+    }, [npcs, activeArtist]);
     
     const filterButtons: Array<'Albums' | 'Singles and EPs' | 'Compilations' | 'Featured'> = ['Albums', 'Singles and EPs', 'Compilations', 'Featured'];
 
@@ -106,14 +124,14 @@ const SpotifyDiscographyView: React.FC<{ onBack: () => void; onSelectRelease: (r
             </div>
 
             <main className="p-4 space-y-8">
-                {filter !== 'Compilations' && latestRelease && (
+                {filter !== 'Compilations' && filter !== 'Featured' && latestRelease && (
                     <div className="space-y-4">
                         <h2 className="text-xl font-bold">Latest release</h2>
                         <ReleaseItem release={latestRelease} large onClick={() => onSelectRelease(latestRelease.id)} />
                     </div>
                 )}
                 
-                {filter !== 'Compilations' && filteredReleases.length > 0 && (
+                {filter !== 'Compilations' && filter !== 'Featured' && filteredReleases.length > 0 && (
                     <div className="space-y-4">
                         <h2 className="text-xl font-bold">{filter}</h2>
                         {mainList.length > 0 ? (
@@ -139,6 +157,21 @@ const SpotifyDiscographyView: React.FC<{ onBack: () => void; onSelectRelease: (r
                             </div>
                         ) : (
                             <p className="text-zinc-400 text-sm">You haven't appeared on any compilations yet.</p>
+                        )}
+                    </div>
+                )}
+
+                {filter === 'Featured' && (
+                    <div className="space-y-4">
+                        <h2 className="text-xl font-bold">Featured On</h2>
+                        {featuredOn.length > 0 ? (
+                            <div className="space-y-5">
+                                {featuredOn.map(song => (
+                                    <FeaturedSongItem key={song.uniqueId} song={song} onClick={() => { /* Placeholder for future song detail view */ }} />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-zinc-400 text-sm">You haven't been featured on any songs yet.</p>
                         )}
                     </div>
                 )}

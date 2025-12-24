@@ -25,28 +25,56 @@ interface AppInfo {
     iconColor?: string;
 }
 
-const apps: AppInfo[] = [
-    { name: 'Spotify', description: 'Stream your music', icon: <SpotifyIcon className="w-8 h-8"/>, view: 'spotify', bgColor: '#1DB954' },
-    { name: 'S for A', description: 'Manage your artist profile', icon: <SpotifyIcon className="w-8 h-8"/>, view: 'spotifyForArtists', bgColor: '#402000' },
-    { name: 'Spotify Charts', description: 'Weekly top songs and albums', icon: <ChartBarIcon className="w-8 h-8"/>, view: 'spotifyChart', bgColor: '#1DB954' },
-    { name: 'X', description: 'Connect with fans worldwide', icon: <XIcon className="w-7 h-7"/>, view: 'x', bgColor: '#000000' },
-    { name: 'Studio', description: 'Record your next hit song', icon: <MicrophoneIcon className="w-8 h-8"/>, view: 'studio', bgColor: '#ef4444' },
-    { name: 'Release Hub', description: 'Release unreleased music', icon: <ArrowUpOnBoxIcon className="w-8 h-8"/>, view: 'releaseHub', bgColor: '#6366f1' },
-    { name: 'YouTube', description: 'Watch and share videos', icon: <YouTubeIcon className="w-8 h-8"/>, view: 'youtube', bgColor: '#FF0000' },
-    { name: 'YT Studio', description: 'Analyze your channel performance', icon: <YouTubeIcon className="w-8 h-8"/>, view: 'youtubeStudio', bgColor: '#282828'},
-    { name: 'Labels', description: 'Sign a record deal', icon: <BuildingOfficeIcon className="w-8 h-8"/>, view: 'labels', bgColor: '#4b5563' },
-    { name: 'Ticketmaster', description: 'Plan and manage your tours', icon: <TicketIcon className="w-8 h-8"/>, view: 'tours', bgColor: '#026cdf' },
-    { name: 'OnlyFans', description: 'Monetize exclusive content', icon: <span className="font-bold text-2xl">OF</span>, view: 'onlyfansSetup', bgColor: '#00AFF0' },
-    { name: 'Promote', description: 'Launch marketing campaigns', icon: <MegaphoneIcon className="w-8 h-8"/>, view: 'promote', bgColor: '#3b82f6' },
-    { name: 'Gigs', description: 'Perform live shows', icon: <MicrophoneIcon className="w-8 h-8"/>, view: 'gigs', bgColor: '#a855f7' },
-    { name: 'Merch Store', description: 'Sell vinyls, CDs, and more', icon: <ShoppingBagIcon className="w-8 h-8"/>, view: 'merchStore', bgColor: '#ec4899' },
-    { name: 'iTunes', description: 'Climb the download charts', icon: <ITunesIcon className="w-8 h-8"/>, view: 'itunes' },
-    { name: 'Catalog', description: 'Manage your assets', icon: <DollarIcon className="w-8 h-8"/>, view: 'catalog', bgColor: '#22c55e' },
-    { name: 'Pitchfork', description: 'Get your music reviewed', icon: <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 fill-current"><title>Pitchfork</title><path d="M19.505 15.867v-3.32c0-1.74-1.29-2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155v3.375c0 3.315-2.73 4.155-5.61 4.155-2.715 0-5.415-.81-5.415-4.155v-3.375c0-1.74-1.29-2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155v3.32c0 2.22-1.26 3.75-4.59 3.75-2.925 0-4.2-1.2-4.2-3.75V.012h4.59v12.42c0 1.74 1.29 2.31 2.07 2.31.69 0 1.12-.3 1.12-.72 0-.54-.495-.69-1.125-.84l-2.19-.495c-2.31-.525-3.51-1.74-3.51-4.155V.012h4.59v12.42c0 1.74 1.29 2.31 2.07 2.31.69 0 1.12-.3 1.12-.72 0-.54-.495-.69-1.125-.84l-2.19-.495c-2.31-.525-3.51-1.74-3.51-4.155V.012h4.59v12.42c0 2.22 1.26 3.75 4.59 3.75 2.925 0 4.2-1.2 4.2-3.75V.012h-4.59v12.51c0 1.74-1.29 2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155z"></path></svg>, view: 'pitchfork', bgColor: '#000000' },
-    { name: 'GRAMMYs', description: 'Your awards history', icon: <TrophyIcon className="w-8 h-8"/>, view: 'grammys', bgColor: '#f59e0b' },
-    { name: 'Achievements', description: 'View career milestones', icon: <TrophyIcon className="w-8 h-8"/>, view: 'achievements', bgColor: '#ca8a04' },
-    { name: 'Chart History', description: 'Your all-time chart stats', icon: <ChartBarIcon className="w-8 h-8"/>, view: 'chartHistory', bgColor: '#0ea5e9' },
+interface AppCategory {
+    title: string;
+    apps: AppInfo[];
+}
+
+const appCategories: AppCategory[] = [
+    {
+        title: 'Music & Audio',
+        apps: [
+            { name: 'Spotify', description: 'Stream your music', icon: <SpotifyIcon className="w-8 h-8"/>, view: 'spotify', bgColor: '#1DB954' },
+            { name: 'Studio', description: 'Record your next hit song', icon: <MicrophoneIcon className="w-8 h-8"/>, view: 'studio', bgColor: '#ef4444' },
+            { name: 'Release Hub', description: 'Release unreleased music', icon: <ArrowUpOnBoxIcon className="w-8 h-8"/>, view: 'releaseHub', bgColor: '#6366f1' },
+            { name: 'iTunes', description: 'Climb the download charts', icon: <ITunesIcon className="w-8 h-8"/>, view: 'itunes' },
+            { name: 'Pitchfork', description: 'Get your music reviewed', icon: <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 fill-current"><title>Pitchfork</title><path d="M19.505 15.867v-3.32c0-1.74-1.29-2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155v3.375c0 3.315-2.73 4.155-5.61 4.155-2.715 0-5.415-.81-5.415-4.155v-3.375c0-1.74-1.29-2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155v3.32c0 2.22-1.26 3.75-4.59 3.75-2.925 0-4.2-1.2-4.2-3.75V.012h4.59v12.42c0 1.74 1.29 2.31 2.07 2.31.69 0 1.12-.3 1.12-.72 0-.54-.495-.69-1.125-.84l-2.19-.495c-2.31-.525-3.51-1.74-3.51-4.155V.012h4.59v12.42c0 1.74 1.29 2.31 2.07 2.31.69 0 1.12-.3 1.12-.72 0-.54-.495-.69-1.125-.84l-2.19-.495c-2.31-.525-3.51-1.74-3.51-4.155V.012h4.59v12.42c0 2.22 1.26 3.75 4.59 3.75 2.925 0 4.2-1.2 4.2-3.75V.012h-4.59v12.51c0 1.74-1.29 2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155z"></path></svg>, view: 'pitchfork', bgColor: '#000000' },
+        ]
+    },
+    {
+        title: 'Social & Video',
+        apps: [
+            { name: 'X', description: 'Connect with fans worldwide', icon: <XIcon className="w-7 h-7"/>, view: 'x', bgColor: '#000000' },
+            { name: 'YouTube', description: 'Watch and share videos', icon: <YouTubeIcon className="w-8 h-8"/>, view: 'youtube', bgColor: '#FF0000' },
+            { name: 'YT Studio', description: 'Analyze your channel performance', icon: <YouTubeIcon className="w-8 h-8"/>, view: 'youtubeStudio', bgColor: '#282828'},
+            { name: 'OnlyFans', description: 'Monetize exclusive content', icon: <span className="font-bold text-2xl">OF</span>, view: 'onlyfansSetup', bgColor: '#00AFF0' },
+        ]
+    },
+    {
+        title: 'Business & Promotion',
+        apps: [
+            { name: 'Labels', description: 'Sign a record deal', icon: <BuildingOfficeIcon className="w-8 h-8"/>, view: 'labels', bgColor: '#4b5563' },
+            { name: 'Ticketmaster', description: 'Plan and manage your tours', icon: <TicketIcon className="w-8 h-8"/>, view: 'tours', bgColor: '#026cdf' },
+            { name: 'Payola', description: 'Influence the industry', icon: <MegaphoneIcon className="w-8 h-8"/>, view: 'promote', bgColor: '#ef4444' },
+            { name: 'Gigs', description: 'Perform live shows', icon: <MicrophoneIcon className="w-8 h-8"/>, view: 'gigs', bgColor: '#a855f7' },
+            { name: 'Merch Store', description: 'Sell vinyls, CDs, and more', icon: <ShoppingBagIcon className="w-8 h-8"/>, view: 'merchStore', bgColor: '#ec4899' },
+            { name: 'Catalog', description: 'Manage your assets', icon: <DollarIcon className="w-8 h-8"/>, view: 'catalog', bgColor: '#22c55e' },
+        ]
+    },
+    {
+        title: 'Charts & Career',
+        apps: [
+            { name: 'S for A', description: 'Manage your artist profile', icon: <SpotifyIcon className="w-8 h-8"/>, view: 'spotifyForArtists', bgColor: '#402000' },
+            { name: 'Spotify Charts', description: 'Weekly top songs and albums', icon: <ChartBarIcon className="w-8 h-8"/>, view: 'spotifyChart', bgColor: '#1DB954' },
+            { name: 'GRAMMYs', description: 'Your awards history', icon: <TrophyIcon className="w-8 h-8"/>, view: 'grammys', bgColor: '#f59e0b' },
+            { name: 'Achievements', description: 'View career milestones', icon: <TrophyIcon className="w-8 h-8"/>, view: 'achievements', bgColor: '#ca8a04' },
+            { name: 'Chart History', description: 'Your all-time chart stats', icon: <ChartBarIcon className="w-8 h-8"/>, view: 'chartHistory', bgColor: '#0ea5e9' },
+        ]
+    }
 ];
+
+const essentialAppNames = ['Spotify', 'S for A', 'Catalog', 'X'];
+const essentialApps = appCategories.flatMap(cat => cat.apps).filter(app => essentialAppNames.includes(app.name));
 
 
 const AppItem: React.FC<{ app: AppInfo }> = ({ app }) => {
@@ -83,8 +111,23 @@ const AppsTab: React.FC = () => {
         <div className="bg-[#121212] min-h-full p-4 text-white">
             <h1 className="text-4xl font-bold">Apps</h1>
             <p className="text-zinc-400 mb-8">Discover the best apps</p>
-            <div className="space-y-6">
-                {apps.map(app => <AppItem key={app.name} app={app} />)}
+
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-4">Essential Apps</h2>
+                <div className="space-y-6">
+                    {essentialApps.map(app => <AppItem key={`essential-${app.name}`} app={app} />)}
+                </div>
+            </div>
+
+            <div className="space-y-8">
+                {appCategories.map(category => (
+                    <div key={category.title}>
+                        <h2 className="text-2xl font-bold mb-4">{category.title}</h2>
+                        <div className="space-y-6">
+                            {category.apps.map(app => <AppItem key={app.name} app={app} />)}
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import { Release, Song, Artist, Group, GameDate } from '../types';
@@ -9,15 +8,113 @@ import MusicNoteIcon from './icons/MusicNoteIcon';
 import UserGroupIcon from './icons/UserGroupIcon';
 import UserCircleIcon from './icons/UserCircleIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
+import ArrowLeftIcon from './icons/ArrowLeftIcon';
+import DotsHorizontalIcon from './icons/DotsHorizontalIcon';
 
 type S4ATab = 'Home' | 'Music' | 'Audience' | 'Profile';
 
+// --- NEW UPCOMING RELEASE DETAIL VIEW ---
+const S4AUpcomingReleaseDetailView: React.FC<{ submissionId: string; onBack: () => void; }> = ({ submissionId, onBack }) => {
+    const { dispatch, activeArtistData } = useGame();
+    if (!activeArtistData) return null;
+
+    const { labelSubmissions, money } = activeArtistData;
+    const submission = labelSubmissions.find(s => s.id === submissionId);
+
+    if (!submission) {
+        onBack();
+        return null;
+    }
+
+    const release = submission.release;
+    const cost = 100000;
+    const canAfford = money >= cost;
+    const isLaunched = submission.hasCountdownPage;
+
+    const handleLaunch = () => {
+        if (canAfford && !isLaunched) {
+            dispatch({ type: 'LAUNCH_COUNTDOWN_PAGE', payload: { submissionId: submission.id, cost: cost } });
+        }
+    };
+
+    return (
+        <div className="bg-gradient-to-b from-blue-800 via-stone-900 to-black text-white min-h-full p-4 flex flex-col">
+            <header className="flex justify-between items-center flex-shrink-0">
+                <button onClick={onBack} className="p-2 -m-2">
+                    <ArrowLeftIcon className="w-6 h-6" />
+                </button>
+                 <button className="p-2 -m-2">
+                    <DotsHorizontalIcon className="w-6 h-6" />
+                </button>
+            </header>
+            <main className="flex-grow flex flex-col items-center justify-center text-center space-y-4">
+                <img src={release.coverArt} alt={release.title} className="w-64 h-64 rounded-lg shadow-2xl shadow-black/50" />
+                <div>
+                    <h1 className="text-3xl font-black tracking-tight">{release.title}</h1>
+                    <p className="text-zinc-400 mt-1">Releasing: W{submission.projectReleaseDate!.week}, {submission.projectReleaseDate!.year}</p>
+                </div>
+                <div className="pt-8 w-full max-w-sm">
+                    <button 
+                        onClick={handleLaunch}
+                        disabled={isLaunched || !canAfford}
+                        className="w-full bg-blue-500 text-white font-bold p-4 rounded-lg disabled:bg-zinc-600 disabled:opacity-70 flex flex-col items-center"
+                    >
+                        <span>{isLaunched ? 'Countdown Page Launched' : `Launch Countdown Page`}</span>
+                        {!isLaunched && <span className="text-sm font-normal opacity-80">(-${formatNumber(cost)})</span>}
+                    </button>
+                    {!canAfford && !isLaunched && <p className="text-red-400 text-xs mt-2">Insufficient funds</p>}
+                </div>
+            </main>
+        </div>
+    );
+};
+
+// --- SONG DETAIL VIEW ---
+const S4ASongDetailView: React.FC<{ song: Song; onBack: () => void }> = ({ song, onBack }) => {
+    const { activeArtistData } = useGame();
+    if (!activeArtistData) return null;
+    const { releases } = activeArtistData;
+    const release = releases.find(r => r.id === song.releaseId);
+    
+    const releaseDateString = release ? new Date(release.releaseDate.year, 0, (release.releaseDate.week - 1) * 7 + 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
+
+    return (
+        <div className="bg-gradient-to-b from-amber-800 via-stone-900 to-black text-white min-h-full p-4 flex flex-col">
+            <header className="flex justify-between items-center flex-shrink-0">
+                <button onClick={onBack} className="p-2 -m-2">
+                    <ArrowLeftIcon className="w-6 h-6" />
+                </button>
+                 <button className="p-2 -m-2">
+                    <DotsHorizontalIcon className="w-6 h-6" />
+                </button>
+            </header>
+            <main className="flex-grow flex flex-col items-center justify-center text-center space-y-4">
+                <img src={song.coverArt} alt={song.title} className="w-64 h-64 rounded-lg shadow-2xl shadow-black/50" />
+                <div>
+                    <h1 className="text-3xl font-black tracking-tight">{song.title}</h1>
+                    <p className="text-zinc-400 mt-1">Released: {releaseDateString}</p>
+                </div>
+                <div className="pt-4">
+                    <div className="flex items-center gap-2 justify-center">
+                        <MusicNoteIcon className="w-5 h-5 text-zinc-400" />
+                        <p className="text-4xl font-bold">{formatNumber(song.streams)}</p>
+                    </div>
+                    <p className="text-sm text-zinc-400">All-time streams</p>
+                </div>
+            </main>
+        </div>
+    );
+};
+
+
 // --- HOME TAB ---
 const S4AHome: React.FC = () => {
-    const { activeArtistData } = useGame();
+    const { activeArtistData, gameState, dispatch } = useGame();
     if (!activeArtistData) return null;
 
     const { releases, songs, listeningNow, monthlyListeners, followers } = activeArtistData;
+    const showWrapped = gameState.date.week >= 50;
+
 
     const latestRelease = useMemo(() => {
         return [...releases].sort((a, b) => (b.releaseDate.year * 52 + b.releaseDate.week) - (a.releaseDate.year * 52 + a.releaseDate.week))[0];
@@ -96,65 +193,210 @@ const S4AHome: React.FC = () => {
                         ))}
                     </div>
                 </div>
+
+                {showWrapped && (
+                    <div className="pt-4">
+                        <button 
+                            onClick={() => dispatch({ type: 'CHANGE_VIEW', payload: 'spotifyWrapped' })}
+                            className="w-full text-left bg-zinc-800/50 p-4 rounded-lg"
+                        >
+                            <p className="text-sm font-bold tracking-widest opacity-80">YOUR YEAR IN MUSIC</p>
+                            <h2 className="text-2xl font-bold mt-2">Your {gameState.date.year} Wrapped for Artists is here</h2>
+                            <p className="mt-2 text-zinc-300">Unwrap the highlights from your year in music and celebrate with your fans.</p>
+                            <div className="mt-4 font-bold text-zinc-200 flex items-center">
+                                GET YOURS <ChevronRightIcon className="w-5 h-5 ml-1" />
+                            </div>
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 // --- MUSIC TAB ---
-const S4AMusic: React.FC = () => {
-    const { activeArtistData } = useGame();
+const S4AMusic: React.FC<{ onSelectSong: (song: Song) => void; onSelectUpcomingRelease: (submissionId: string) => void; }> = ({ onSelectSong, onSelectUpcomingRelease }) => {
+    const { activeArtistData, gameState } = useGame();
+    const [musicTab, setMusicTab] = useState<'Songs' | 'Releases' | 'Playlists' | 'Upcoming'>('Upcoming');
+
     if (!activeArtistData) return null;
     const { songs, streamsHistory } = activeArtistData;
 
-    const releasedSongs = useMemo(() => {
-        return [...songs]
-            .filter(s => s.isReleased)
-            .map(song => {
-                const streamsLast12Months = streamsHistory
-                    .slice(-52)
-                    .reduce((sum, week) => {
-                        // This is an approximation. A real implementation would need per-song history.
-                        // We'll approximate by assuming this song's share of total streams is constant.
-                        const totalStreamsAllSongs = songs.reduce((s, song) => s + (song.streams || 0), 0);
-                        const songShare = (song.streams || 0) / (totalStreamsAllSongs || 1);
-                        return sum + (week.streams * songShare);
-                    }, 0);
-                return { ...song, streamsLast12Months };
-            })
-            .sort((a, b) => b.streamsLast12Months - a.streamsLast12Months);
-    }, [songs, streamsHistory]);
+    type SortPeriod = 'all' | '12m' | '7d' | '24h';
+    const [sortPeriod, setSortPeriod] = useState<SortPeriod>('12m');
+
+    const sortedSongs = useMemo(() => {
+        const releasedSongs = songs.filter(s => s.isReleased);
+        const totalStreamsAllSongs = songs.reduce((s, song) => s + (song.streams || 0), 0) || 1;
+
+        switch (sortPeriod) {
+            case 'all':
+                return [...releasedSongs]
+                    .map(s => ({...s, calculatedStreams: s.streams }))
+                    .sort((a, b) => b.streams - a.streams);
+            case '12m':
+                return [...releasedSongs]
+                    .map(song => {
+                        const streamsLast12Months = streamsHistory
+                            .slice(-52)
+                            .reduce((sum, week) => {
+                                const songShare = (song.streams || 0) / totalStreamsAllSongs;
+                                return sum + (week.streams * songShare);
+                            }, 0);
+                        return { ...song, calculatedStreams: streamsLast12Months };
+                    })
+                    .sort((a, b) => b.calculatedStreams - a.calculatedStreams);
+            case '7d':
+                return [...releasedSongs]
+                    .map(song => ({ ...song, calculatedStreams: song.lastWeekStreams || 0 }))
+                    .sort((a, b) => b.calculatedStreams - a.calculatedStreams);
+            case '24h':
+                 return [...releasedSongs]
+                    .map(song => {
+                        const lastDayStreams = song.dailyStreams ? song.dailyStreams[song.dailyStreams.length - 1] || 0 : 0;
+                        return { ...song, calculatedStreams: lastDayStreams };
+                    })
+                    .sort((a, b) => b.calculatedStreams - a.calculatedStreams);
+            default:
+                return [];
+        }
+    }, [songs, streamsHistory, sortPeriod]);
+
+    const upcomingReleases = useMemo(() => {
+        if (!activeArtistData) return [];
+        
+        const upcoming: {
+            id: string;
+            submissionId?: string;
+            title: string;
+            type: Release['type'];
+            coverArt: string;
+            releaseDate: GameDate;
+        }[] = [];
+    
+        for (const sub of activeArtistData.labelSubmissions) {
+            if (sub.status === 'scheduled') {
+                if (sub.projectReleaseDate && (sub.projectReleaseDate.year * 52 + sub.projectReleaseDate.week > gameState.date.year * 52 + gameState.date.week)) {
+                    upcoming.push({
+                        id: sub.release.id,
+                        submissionId: sub.id,
+                        title: sub.release.title,
+                        type: sub.release.type,
+                        coverArt: sub.release.coverArt,
+                        releaseDate: sub.projectReleaseDate,
+                    });
+                }
+                if (sub.singlesToRelease) {
+                    for (const single of sub.singlesToRelease) {
+                        if (single.releaseDate.year * 52 + single.releaseDate.week > gameState.date.year * 52 + gameState.date.week) {
+                            const song = activeArtistData.songs.find(s => s.id === single.songId);
+                            if (song) {
+                                upcoming.push({
+                                    id: song.id,
+                                    title: song.title,
+                                    type: 'Single',
+                                    coverArt: song.coverArt,
+                                    releaseDate: single.releaseDate,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return upcoming.sort((a, b) => (a.releaseDate.year * 52 + a.releaseDate.week) - (b.releaseDate.year * 52 + b.releaseDate.week));
+    }, [activeArtistData, gameState.date]);
+
+    const sortOptions: {id: SortPeriod, label: string}[] = [
+        { id: '12m', label: 'Last 12 months' },
+        { id: 'all', label: 'All time' },
+        { id: '7d', label: 'Last 7 days' },
+        { id: '24h', label: 'Last 24 hours' },
+    ];
     
     return (
          <div className="bg-white text-black min-h-full">
             <header className="p-4 border-b">
                 <h1 className="text-3xl font-bold">Music</h1>
-                <div className="flex gap-4 mt-4 text-sm font-semibold text-zinc-600 border-b">
-                    <button className="py-2 text-black border-b-2 border-black">Songs</button>
-                    <button className="py-2">Releases</button>
-                    <button className="py-2">Playlists</button>
-                    <button className="py-2">Upcoming</button>
+                <div className="flex gap-6 mt-4 text-sm font-semibold text-zinc-600 border-b">
+                    <button onClick={() => setMusicTab('Songs')} className={`py-2 ${musicTab === 'Songs' ? 'text-black border-b-2 border-black' : ''}`}>Songs</button>
+                    <button onClick={() => setMusicTab('Releases')} className={`py-2 ${musicTab === 'Releases' ? 'text-black border-b-2 border-black' : ''}`}>Releases</button>
+                    <button onClick={() => setMusicTab('Playlists')} className={`py-2 ${musicTab === 'Playlists' ? 'text-black border-b-2 border-black' : ''}`}>Playlists</button>
+                    <button onClick={() => setMusicTab('Upcoming')} className={`py-2 ${musicTab === 'Upcoming' ? 'text-black border-b-2 border-black' : ''}`}>Upcoming</button>
                 </div>
             </header>
-            <div className="p-4">
-                <div className="flex justify-between items-center text-xs font-bold text-zinc-500 mb-2">
-                    <p>LAST 12 MONTHS</p>
-                    <p>STREAMS</p>
-                </div>
-                <div className="space-y-3">
-                    {releasedSongs.map(song => (
-                         <div key={song.id} className="flex items-center gap-3">
-                            <img src={song.coverArt} alt={song.title} className="w-12 h-12 object-cover" />
-                            <p className="font-semibold flex-grow">{song.title}</p>
-                            <p className="font-bold">{formatNumber(song.streamsLast12Months)}</p>
-                            <ChevronRightIcon className="w-5 h-5 text-zinc-400" />
+            
+            {musicTab === 'Songs' && (
+                <div className="p-4">
+                    <div className="flex justify-between items-center mb-2">
+                         <div className="flex gap-2 overflow-x-auto">
+                            {sortOptions.map(option => (
+                                <button
+                                    key={option.id}
+                                    onClick={() => setSortPeriod(option.id)}
+                                    className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors whitespace-nowrap ${sortPeriod === option.id ? 'bg-black text-white' : 'bg-zinc-200 text-black'}`}
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
                         </div>
-                    ))}
+                        <p className="text-xs font-bold text-zinc-500 flex-shrink-0 ml-2">STREAMS</p>
+                    </div>
+                    <div className="space-y-3">
+                        {sortedSongs.map(song => (
+                             <button key={song.id} onClick={() => onSelectSong(song)} className="w-full text-left flex items-center gap-3 hover:bg-zinc-100 p-1 -m-1 rounded-md">
+                                <img src={song.coverArt} alt={song.title} className="w-12 h-12 object-cover" />
+                                <p className="font-semibold flex-grow truncate">{song.title}</p>
+                                <p className="font-bold">{formatNumber(song.calculatedStreams)}</p>
+                                <ChevronRightIcon className="w-5 h-5 text-zinc-400" />
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {musicTab === 'Releases' && <div className="p-8 text-center text-zinc-500">Feature coming soon.</div>}
+            {musicTab === 'Playlists' && <div className="p-8 text-center text-zinc-500">Feature coming soon.</div>}
+
+            {musicTab === 'Upcoming' && (
+                <div className="p-4">
+                    <div className="flex justify-between items-center text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4">
+                        <span>Releases</span>
+                        <span>Release date</span>
+                    </div>
+                    {upcomingReleases.length > 0 ? (
+                        <div className="space-y-4">
+                            {upcomingReleases.map(release => {
+                                const isAlbumOrEP = release.type !== 'Single';
+                                const Wrapper = isAlbumOrEP ? 'button' : 'div';
+                                const props = isAlbumOrEP ? { onClick: () => onSelectUpcomingRelease(release.submissionId!) } : {};
+                                
+                                return (
+                                    <Wrapper key={release.id} {...props} className={`w-full flex justify-between items-center text-left ${isAlbumOrEP ? 'hover:bg-zinc-100 p-2 -m-2 rounded-lg' : ''}`}>
+                                        <div className="flex items-center gap-3">
+                                            <img src={release.coverArt} className="w-12 h-12 object-cover rounded-md" />
+                                            <div>
+                                                <p className="font-bold text-black">{release.title}</p>
+                                                <p className="text-sm text-zinc-500">{release.type}</p>
+                                            </div>
+                                        </div>
+                                        <p className="font-bold text-lg text-black">{release.releaseDate.year}</p>
+                                    </Wrapper>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 text-zinc-500">
+                            <p>No upcoming releases scheduled.</p>
+                            <p className="text-sm mt-1">Plan a release with your label to see it here.</p>
+                        </div>
+                    )}
+                </div>
+            )}
          </div>
     );
 };
+
 
 // --- AUDIENCE TAB ---
 const S4AAudience: React.FC = () => {
@@ -317,13 +559,44 @@ const S4AProfile: React.FC = () => {
 const SpotifyForArtistsView: React.FC = () => {
     const { dispatch, activeArtist } = useGame();
     const [activeTab, setActiveTab] = useState<S4ATab>('Home');
+    const [view, setView] = useState<'tabs' | 'songDetail' | 'upcomingReleaseDetail'>('tabs');
+    const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+    const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
 
     if (!activeArtist) return null;
+
+    const handleSelectSong = (song: Song) => {
+        setSelectedSong(song);
+        setView('songDetail');
+    };
+
+    const handleBackFromDetail = () => {
+        setSelectedSong(null);
+        setView('tabs');
+    };
+
+    const handleSelectUpcomingRelease = (submissionId: string) => {
+        setSelectedSubmissionId(submissionId);
+        setView('upcomingReleaseDetail');
+    };
+
+    const handleBackFromUpcoming = () => {
+        setSelectedSubmissionId(null);
+        setView('tabs');
+    };
+
+    if (view === 'songDetail' && selectedSong) {
+        return <S4ASongDetailView song={selectedSong} onBack={handleBackFromDetail} />;
+    }
+
+    if (view === 'upcomingReleaseDetail' && selectedSubmissionId) {
+        return <S4AUpcomingReleaseDetailView submissionId={selectedSubmissionId} onBack={handleBackFromUpcoming} />;
+    }
 
     const renderContent = () => {
         switch (activeTab) {
             case 'Home': return <S4AHome />;
-            case 'Music': return <S4AMusic />;
+            case 'Music': return <S4AMusic onSelectSong={handleSelectSong} onSelectUpcomingRelease={handleSelectUpcomingRelease} />;
             case 'Audience': return <S4AAudience />;
             case 'Profile': return <S4AProfile />;
             default: return <S4AHome />;

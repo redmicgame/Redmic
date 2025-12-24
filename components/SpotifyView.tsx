@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useRef } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import ChevronLeftIcon from './icons/ChevronLeftIcon';
@@ -80,13 +81,19 @@ const SpotifyView: React.FC = () => {
             return [];
         }
 
-        const releasesWithStreams = releases.map(release => {
+        const releasesWithStreams = releases
+            .filter(r => !r.soundtrackInfo)
+            .map(release => {
             const totalStreams = release.songIds.reduce((sum, songId) => {
                 const song = songs.find(s => s.id === songId);
                 return sum + (song?.streams || 0);
             }, 0);
             return { ...release, totalStreams };
         });
+
+        if (releasesWithStreams.length === 0) {
+            return [];
+        }
 
         const latestRelease = releasesWithStreams.reduce((latest, current) => {
             const latestDate = latest.releaseDate.year * 52 + latest.releaseDate.week;
@@ -210,6 +217,22 @@ const SpotifyView: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Artist Pick */}
+                {artistPickItem && (
+                    <div className="space-y-3">
+                        <h2 className="text-xl font-bold">Artist Pick</h2>
+                        <button onClick={() => handleShowReleaseDetail(artistPick.itemType === 'release' ? artistPick.itemId : (songs.find(s=>s.id === artistPick.itemId)?.releaseId || ''))} className="w-full text-left flex items-center gap-4 p-3 -m-3 rounded-lg hover:bg-white/10">
+                            <img src={artistPickItem.coverArt} alt={artistPickItem.title} className="w-20 h-20 rounded object-cover" />
+                            <div>
+                                <p className="font-semibold text-white">{artistPickItem.title}</p>
+                                <p className="text-sm text-zinc-400">
+                                    {'songIds' in artistPickItem ? artistPickItem.type : 'Single'} • New Release
+                                </p>
+                            </div>
+                        </button>
+                    </div>
+                )}
+
                 {/* Popular Songs */}
                 {topSongs.length > 0 && (
                     <div className="space-y-4">
@@ -229,22 +252,6 @@ const SpotifyView: React.FC = () => {
                                 </button>
                             </div>
                         )}
-                    </div>
-                )}
-
-                {/* Artist Pick */}
-                {artistPickItem && (
-                    <div className="space-y-3">
-                        <h2 className="text-xl font-bold">Artist Pick</h2>
-                        <button onClick={() => handleShowReleaseDetail(artistPick.itemType === 'release' ? artistPick.itemId : (songs.find(s=>s.id === artistPick.itemId)?.releaseId || ''))} className="w-full text-left flex items-center gap-4 p-3 -m-3 rounded-lg hover:bg-white/10">
-                            <img src={artistPickItem.coverArt} alt={artistPickItem.title} className="w-20 h-20 rounded object-cover" />
-                            <div>
-                                <p className="font-semibold text-white">{artistPickItem.title}</p>
-                                <p className="text-sm text-zinc-400">
-                                    {'songIds' in artistPickItem ? artistPickItem.type : 'Single'} • New Release
-                                </p>
-                            </div>
-                        </button>
                     </div>
                 )}
 

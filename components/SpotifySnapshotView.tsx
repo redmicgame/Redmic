@@ -60,11 +60,17 @@ const SpotifySnapshotView: React.FC<{ release: Release; onBack: () => void; }> =
                                 } else if (song.lastWeekStreams > 0) {
                                     changeDisplay = '+NEW';
                                 }
+
+                                const netWeekly = song.lastWeekStreams || 0;
+                                const isNegative = netWeekly < 0;
+
                                 return (
                                     <tr key={song.id} className={index % 2 === 0 ? 'bg-white' : 'bg-red-50'}>
                                         <td className="p-2 font-bold text-black">{song.title}</td>
                                         <td className="text-right p-2 text-gray-700">{(song.streams || 0).toLocaleString()}</td>
-                                        <td className="text-right p-2 font-bold text-gray-800">+{(song.lastWeekStreams || 0).toLocaleString()}</td>
+                                        <td className={`text-right p-2 font-bold ${isNegative ? 'text-red-600' : 'text-gray-800'}`}>
+                                            {isNegative ? '' : '+'}{netWeekly.toLocaleString()}
+                                        </td>
                                         <td className={`text-right p-2 font-semibold ${changeDisplay.startsWith('-') ? 'text-red-600' : 'text-green-600'}`}>
                                             {changeDisplay}
                                         </td>
@@ -76,7 +82,9 @@ const SpotifySnapshotView: React.FC<{ release: Release; onBack: () => void; }> =
                             <tr className="border-t-2 border-red-200 font-bold bg-gray-100">
                                 <td className="p-2"></td>
                                 <td className="text-right p-2 text-black">{totalStreams.toLocaleString()}</td>
-                                <td className="text-right p-2 text-black">+{totalWeeklyStreams.toLocaleString()}</td>
+                                <td className={`text-right p-2 ${totalWeeklyStreams < 0 ? 'text-red-600' : 'text-black'}`}>
+                                    {totalWeeklyStreams >= 0 ? '+' : ''}{totalWeeklyStreams.toLocaleString()}
+                                </td>
                                 <td className={`text-right p-2 ${totalChangeDisplay.startsWith('-') ? 'text-red-600' : 'text-green-600'}`}>
                                     {totalChangeDisplay}
                                 </td>

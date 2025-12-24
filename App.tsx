@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import StartScreen from './components/StartScreen';
@@ -59,6 +58,15 @@ import ManagementView from './components/ManagementView';
 import SecurityView from './components/SecurityView';
 import SpotifyTopSongsView from './components/SpotifyTopSongsView';
 import SpotifyTopAlbumsView from './components/SpotifyTopAlbumsView';
+import CreateVogueFeatureView from './components/CreateVogueFeatureView';
+import SpotifyWrappedView from './components/SpotifyWrappedView';
+import HotPopSongsView from './components/HotPopSongsView';
+import HotRapRnbView from './components/HotRapRnbView';
+import ElectronicChartView from './components/ElectronicChartView';
+import CountryChartView from './components/CountryChartView';
+import CreateFeatureView from './components/CreateFeatureView';
+import CreateOnTheRadarPerformanceView from './components/CreateOnTheRadarPerformanceView';
+import CreateTrshdPerformanceView from './components/CreateTrshdPerformanceView';
 
 const AppContent: React.FC = () => {
     const { gameState, activeArtistData } = useGame();
@@ -77,6 +85,8 @@ const AppContent: React.FC = () => {
                 return <SpotifyAlbumCountdownView />;
             case 'spotifyForArtists':
                 return <SpotifyForArtistsView />;
+            case 'spotifyWrapped':
+                return <SpotifyWrappedView />;
             case 'studio':
                 return <StudioView />;
             case 'release':
@@ -107,6 +117,14 @@ const AppContent: React.FC = () => {
                 return <BillboardAlbumsView />;
             case 'spotifyChart':
                 return <SpotifyChartView />;
+            case 'hotPopSongs':
+                return <HotPopSongsView />;
+            case 'hotRapRnb':
+                return <HotRapRnbView />;
+            case 'electronicChart':
+                return <ElectronicChartView />;
+            case 'countryChart':
+                return <CountryChartView />;
             case 'spotifyTopSongs':
                 return <SpotifyTopSongsView />;
             case 'spotifyTopAlbums':
@@ -135,10 +153,16 @@ const AppContent: React.FC = () => {
                 return <AlbumSalesChartView />;
             case 'createGeniusInterview':
                 return <CreateGeniusInterviewView />;
+            case 'createOnTheRadarPerformance':
+                return <CreateOnTheRadarPerformanceView />;
+            case 'createTrshdPerformance':
+                return <CreateTrshdPerformanceView />;
             case 'createFallonPerformance':
                 return <CreateFallonPerformanceView />;
             case 'createFallonInterview':
                 return <CreateFallonInterviewView />;
+            case 'createFeature':
+                return <CreateFeatureView />;
             case 'x':
                 return <XView />;
             case 'xProfile':
@@ -179,6 +203,8 @@ const AppContent: React.FC = () => {
                 return <ManagementView />;
             case 'security':
                 return <SecurityView />;
+            case 'createVogueFeature':
+                return <CreateVogueFeatureView />;
             case 'game':
             default:
                 return <GameUI />;

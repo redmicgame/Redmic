@@ -1,6 +1,5 @@
 
-
-import { ArtistData, GameState, XPost, XUser, XTrend, Song } from '../types';
+import { ArtistData, GameState, XPost, XUser, XTrend, Song, Video } from '../types';
 import { formatNumber } from '../context/GameContext';
 
 type PlayerSongWithChart = Song & { chartRank?: number };
@@ -23,6 +22,21 @@ const generateHaterUsername = (): string => {
     return `${pickRandom(prefixes)}${pickRandom(suffixes)}`;
 };
 
+const generateLeakChannelUsername = (artistName: string): { name: string; username: string } => {
+    const cleanedName = artistName.replace(/\s/g, '').toLowerCase();
+    const suffixes = ['Leaks', 'Unreleased', 'Archive', 'LostMedia', 'Vault', 'Demos', 'Files'];
+    const randomSuffix = pickRandom(suffixes);
+
+    const username = `${cleanedName}${randomSuffix.toLowerCase()}`;
+    const name = `${artistName} ${randomSuffix}`;
+
+    return { name, username };
+};
+
+const getGameDateString = (gameDate: { week: number; year: number }) => {
+    const date = new Date(gameDate.year, 0, (gameDate.week - 1) * 7 + 1);
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+};
 
 export const generateWeeklyXContent = (
     artistData: ArtistData,
@@ -35,7 +49,115 @@ export const generateWeeklyXContent = (
     const newUsers: XUser[] = [];
     const newTrends: XTrend[] = [];
     const { date } = gameState;
-    const { artistImages, artistVideoThumbnails, releases, streamsRemovedThisWeek, paparazziPhotos } = artistData;
+    const { artistImages, artistVideoThumbnails, releases, streamsRemovedThisWeek, paparazziPhotos, tours, voguePhotoshoots, songs, tourPhotos } = artistData;
+
+    // --- UNRELEASED SONG TOUR DEBUT TWEET ---
+    const activeTour = tours.find(t => t.status === 'active' && t.currentVenueIndex === 1);
+    if (activeTour) {
+        const unreleasedSongsOnSetlist = activeTour.setlist
+            .map(songId => songs.find(s => s.id === songId))
+            .filter((song): song is Song => !!song && !song.isReleased);
+
+        if (unreleasedSongsOnSetlist.length > 0 && tourPhotos.length > 0) {
+            const featuredSong = pickRandom(unreleasedSongsOnSetlist);
+            const tourPhoto = pickRandom(tourPhotos);
+            const venue = activeTour.venues[0];
+
+            const content = `${artistName} performs her unreleased song ‘${featuredSong.title}’ at her concert in ${venue.city}.`;
+
+            newPosts.push({
+                id: crypto.randomUUID(),
+                authorId: 'popbase',
+                content,
+                image: tourPhoto,
+                likes: Math.floor(Math.random() * 150000) + 80000, // 80k-230k likes
+                retweets: Math.floor(Math.random() * 12000) + 5000,
+                views: Math.floor(Math.random() * 2000000) + 500000,
+                date
+            });
+        }
+    }
+
+
+    // --- TOURING DATA LOGIC ---
+    const touringDataUser: XUser = {
+        id: 'touringdata',
+        name: 'Touring Data',
+        username: 'touringdata',
+        avatar: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMiIgZmlsbD0iIzAwMCIvPjxwYXRoIGQ9Ik00NCAxOEwyMCA0NE0yMCAxOEw0NCA0NCIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzIgMTZMMzIgNDgiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+', // Stylized light/spotlight icon
+        isVerified: true,
+        bio: 'The most comprehensive source for concert touring data.',
+        followersCount: 150000,
+        followingCount: 50,
+    };
+    
+    // Add Touring Data to new users if not already present (checked in main loop usually, but safe to add)
+    newUsers.push(touringDataUser);
+
+    const activeOrFinishedTours = tours.filter(t => t.status === 'active' || (t.status === 'finished' && t.currentVenueIndex === t.venues.length));
+
+    activeOrFinishedTours.forEach(tour => {
+        const lastVenueIndex = tour.currentVenueIndex - 1;
+        
+        // 1. Single Venue Report (If a show just happened this week)
+        // We simulate "just happened" if there is a completed venue
+        if (lastVenueIndex >= 0 && tour.status === 'active') {
+            const venue = tour.venues[lastVenueIndex];
+            // Only post if it was a good show (sold out or high capacity) to avoid spamming every small gig
+            if (venue.soldOut || venue.capacity > 2000) {
+                const isHighestGrossing = Math.random() > 0.5;
+                const typeText = isHighestGrossing ? "highest-grossing" : "most-attended";
+                const dateString = getGameDateString(date);
+                
+                let content = '';
+                if (isHighestGrossing) {
+                    content = `${artistName} earned their highest-grossing concert of all time on ${dateString}, with $${venue.revenue.toLocaleString()} at ${venue.name} in ${venue.city} as part of the "${tour.name}".`;
+                } else {
+                    content = `${artistName} earned their most-attended concert of all time on ${dateString}, with ${venue.ticketsSold.toLocaleString()} tickets sold at ${venue.name} in ${venue.city} as part of the "${tour.name}".`;
+                }
+
+                newPosts.push({
+                    id: crypto.randomUUID(),
+                    authorId: touringDataUser.id,
+                    content: content,
+                    likes: Math.floor(Math.random() * 5000) + 1000,
+                    retweets: Math.floor(Math.random() * 1500) + 200,
+                    views: Math.floor(Math.random() * 100000) + 20000,
+                    date
+                });
+            }
+        }
+
+        // 2. Box Office Summary (Periodic or End of Tour)
+        // Chance to post summary: High if tour finished this week, Low if active
+        const isTourFinishedThisWeek = tour.status === 'finished' && tour.currentVenueIndex === tour.venues.length; // Simplified check
+        const shouldPostSummary = isTourFinishedThisWeek || (tour.status === 'active' && Math.random() < 0.25 && tour.currentVenueIndex > 0);
+
+        if (shouldPostSummary) {
+            const reportedShows = tour.currentVenueIndex;
+            const totalRevenue = tour.totalRevenue;
+            const totalTickets = tour.ticketsSold;
+            
+            if (reportedShows > 0) {
+                const avgRevenue = Math.floor(totalRevenue / reportedShows);
+                const avgTickets = Math.floor(totalTickets / reportedShows);
+                const avgPrice = Math.floor(totalRevenue / totalTickets);
+
+                const summaryContent = `${tour.name.toUpperCase()}, ${artistName}\n$${totalRevenue.toLocaleString()} Revenue ($${avgRevenue.toLocaleString()} avg.)\n${totalTickets.toLocaleString()} Tickets Sold (${avgTickets.toLocaleString()} avg.)\n$${avgPrice.toFixed(2)} Average Price\n${reportedShows}/${tour.venues.length} Reported Shows\n#BoxOffice`;
+
+                newPosts.push({
+                    id: crypto.randomUUID(),
+                    authorId: touringDataUser.id,
+                    content: summaryContent,
+                    likes: Math.floor(Math.random() * 8000) + 2000,
+                    retweets: Math.floor(Math.random() * 2000) + 500,
+                    views: Math.floor(Math.random() * 150000) + 40000,
+                    date
+                });
+            }
+        }
+    });
+
 
     // --- LEAK POSTS ---
     if (leakedSong) {
@@ -112,6 +234,55 @@ export const generateWeeklyXContent = (
             views: Math.floor(Math.random() * 15000) + 3000,
             date
         });
+
+        // --- FAN LEAK VIDEO LOGIC ---
+        if (Math.random() < 0.9) { // 90% chance to upload a leak video
+            const playerUser = artistData.xUsers.find(u => u.isPlayer);
+            if (playerUser) {
+                const { name: fanChannelName, username: fanChannelUsername } = generateLeakChannelUsername(artistName);
+                const fanId = `fan_leak_video_${fanChannelUsername}`;
+
+                // Check if this fan user already exists, if not, create it
+                let fanUser = artistData.xUsers.find(u => u.id === fanId);
+                if (!fanUser) {
+                    const avatarSources = [playerUser.avatar, leakedSong.coverArt, ...artistData.artistImages];
+                    const fanAvatar = pickRandom(avatarSources);
+                    fanUser = {
+                        id: fanId,
+                        name: fanChannelName,
+                        username: fanChannelUsername,
+                        avatar: fanAvatar,
+                        isVerified: false,
+                        bio: `leaks & unreleased music from ${artistName}`,
+                        followersCount: Math.floor(Math.random() * 50000) + 1000,
+                        followingCount: 1
+                    };
+                    newUsers.push(fanUser); // Add to be created this week
+                }
+                
+                // Thumbnail selection
+                const thumbnailSources = [leakedSong.coverArt, playerUser.avatar, ...artistData.artistImages];
+                const thumbnail = pickRandom(thumbnailSources);
+
+                // Views based on quality. Higher quality = more viral potential.
+                const views = Math.floor((leakedSong.quality / 100) * (Math.random() * 1000000 + 50000));
+
+                const newVideo: Video = {
+                    id: crypto.randomUUID(),
+                    songId: leakedSong.id,
+                    title: `${artistName} - ${leakedSong.title.replace(/\s*\(feat\..*\)/, '')} (leaked song)`,
+                    type: 'Custom',
+                    views: views,
+                    thumbnail: thumbnail,
+                    releaseDate: date,
+                    artistId: leakedSong.artistId,
+                    channelId: fanUser.id,
+                    description: `unreleased track by ${artistName}. enjoy before it's taken down!\n\n#${artistName.replace(/\s/g, '')} #leak #unreleased`,
+                };
+                
+                artistData.videos.push(newVideo);
+            }
+        }
     }
 
 
@@ -386,7 +557,7 @@ export const generateWeeklyXContent = (
     }
 
     // Addiction Account Post
-    const allMedia = [...artistImages, ...artistVideoThumbnails];
+    const allMedia = [...artistImages, ...artistVideoThumbnails, ...(voguePhotoshoots?.flatMap(p => p.photoshootImages) || [])];
     const addictionAccount = artistData.xUsers.find(u => u.id.startsWith('addiction_fan'));
 
     if (addictionAccount && allMedia.length > 0 && Math.random() < 0.75) { // 75% chance each week
@@ -405,6 +576,29 @@ export const generateWeeklyXContent = (
             likes: Math.floor(Math.random() * 150000) + 50000, // 50k - 200k
             retweets: Math.floor(Math.random() * 15000) + 5000, // 5k - 20k
             views: Math.floor(Math.random() * 1500000) + 500000, // 500k - 2M
+            date
+        });
+    }
+
+    // Fan account post about vogue photoshoot
+    const fanAccount = artistData.xUsers.find(u => u.id.startsWith('fan'));
+    if (fanAccount && voguePhotoshoots && voguePhotoshoots.length > 0 && Math.random() < 0.2) {
+        const randomShoot = pickRandom(voguePhotoshoots);
+        const randomPhoto = pickRandom(randomShoot.photoshootImages);
+        const templates = [
+            `still not over this shoot for ${randomShoot.magazine}!!`,
+            `this look lives in my mind rent free`,
+            `${artistName} in ${randomShoot.magazine} was a cultural reset`,
+        ];
+
+        newPosts.push({
+            id: crypto.randomUUID(),
+            authorId: fanAccount.id,
+            content: pickRandom(templates).replace('[Artist Name]', artistName),
+            image: randomPhoto,
+            likes: Math.floor(Math.random() * 8000),
+            retweets: Math.floor(Math.random() * 1500),
+            views: Math.floor(Math.random() * 90000),
             date
         });
     }
