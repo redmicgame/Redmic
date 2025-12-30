@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { GameProvider, useGame } from './context/GameContext';
 import StartScreen from './components/StartScreen';
@@ -67,6 +68,10 @@ import CountryChartView from './components/CountryChartView';
 import CreateFeatureView from './components/CreateFeatureView';
 import CreateOnTheRadarPerformanceView from './components/CreateOnTheRadarPerformanceView';
 import CreateTrshdPerformanceView from './components/CreateTrshdPerformanceView';
+import AppleMusicView from './components/AppleMusicView';
+import OscarsView from './components/OscarsView';
+import SubmitForOscarsView from './components/SubmitForOscarsView';
+import CreateOscarPerformanceView from './components/CreateOscarPerformanceView';
 
 const AppContent: React.FC = () => {
     const { gameState, activeArtistData } = useGame();
@@ -183,10 +188,18 @@ const AppContent: React.FC = () => {
                 return <CreateGrammyPerformanceView />;
             case 'grammyRedCarpet':
                 return <GrammyRedCarpetView />;
+            case 'oscars':
+                return <OscarsView />;
+            case 'submitForOscars':
+                return <SubmitForOscarsView />;
+            case 'createOscarPerformance':
+                return <CreateOscarPerformanceView />;
             case 'contractRenewal':
                 return <ContractRenewalView />;
             case 'itunes':
                 return <ITunesView />;
+            case 'appleMusic':
+                return <AppleMusicView />;
             case 'onlyfansSetup':
                 return <OnlyFansSetupView />;
             case 'onlyfans':

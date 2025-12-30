@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { useGame } from '../context/GameContext';
 import SpotifyIcon from './icons/SpotifyIcon';
@@ -15,6 +16,8 @@ import ChartBarIcon from './icons/ChartBarIcon';
 import ArrowUpOnBoxIcon from './icons/ArrowUpOnBoxIcon';
 import { GameView } from '../types';
 import TicketIcon from './icons/TicketIcon';
+import AppleMusicIcon from './icons/AppleMusicIcon';
+import OscarAwardIcon from './icons/OscarAwardIcon';
 
 interface AppInfo {
     name: string;
@@ -35,10 +38,11 @@ const appCategories: AppCategory[] = [
         title: 'Music & Audio',
         apps: [
             { name: 'Spotify', description: 'Stream your music', icon: <SpotifyIcon className="w-8 h-8"/>, view: 'spotify', bgColor: '#1DB954' },
+            { name: 'Apple Music', description: 'Explore your catalog', icon: <AppleMusicIcon className="w-8 h-8"/>, view: 'appleMusic' },
             { name: 'Studio', description: 'Record your next hit song', icon: <MicrophoneIcon className="w-8 h-8"/>, view: 'studio', bgColor: '#ef4444' },
             { name: 'Release Hub', description: 'Release unreleased music', icon: <ArrowUpOnBoxIcon className="w-8 h-8"/>, view: 'releaseHub', bgColor: '#6366f1' },
             { name: 'iTunes', description: 'Climb the download charts', icon: <ITunesIcon className="w-8 h-8"/>, view: 'itunes' },
-            { name: 'Pitchfork', description: 'Get your music reviewed', icon: <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 fill-current"><title>Pitchfork</title><path d="M19.505 15.867v-3.32c0-1.74-1.29-2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155v3.375c0 3.315-2.73 4.155-5.61 4.155-2.715 0-5.415-.81-5.415-4.155v-3.375c0-1.74-1.29-2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155v3.32c0 2.22-1.26 3.75-4.59 3.75-2.925 0-4.2-1.2-4.2-3.75V.012h4.59v12.42c0 1.74 1.29 2.31 2.07 2.31.69 0 1.12-.3 1.12-.72 0-.54-.495-.69-1.125-.84l-2.19-.495c-2.31-.525-3.51-1.74-3.51-4.155V.012h4.59v12.42c0 1.74 1.29 2.31 2.07 2.31.69 0 1.12-.3 1.12-.72 0-.54-.495-.69-1.125-.84l-2.19-.495c-2.31-.525-3.51-1.74-3.51-4.155V.012h4.59v12.42c0 2.22 1.26 3.75 4.59 3.75 2.925 0 4.2-1.2 4.2-3.75V.012h-4.59v12.51c0 1.74-1.29 2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155z"></path></svg>, view: 'pitchfork', bgColor: '#000000' },
+            { name: 'Pitchfork', description: 'Get your music reviewed', icon: <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 fill-current"><title>Pitchfork</title><path d="M19.505 15.867v-3.32c0-1.74-1.29-2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155v3.375c0 3.315-2.73 4.155-5.61 4.155-2.715 0-5.415-.81-5.415-4.155v-3.375c0-1.74-1.29-2.31-2.07-2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155v3.32c0 2.22-1.26 3.75-4.59 3.75-2.925 0-4.2-1.2-4.2-3.75V.012h4.59v12.42c0 1.74 1.29 2.31 2.07 2.31.69 0 1.12-.3 1.12-.72 0-.54-.495-.69-1.125-.84l-2.19-.495c-2.31-.525-3.51-1.74-3.51-4.155V.012h4.59v12.42c0 1.74 1.29 2.31 2.07 2.31.69 0 1.12-.3 1.12-.72 0-.54-.495-.69-1.125-.84l-2.19-.495c-2.31-.525-3.51-1.74-3.51-4.155V.012h4.59v12.42c0 2.22 1.26 3.75 4.59 3.75 2.925 0 4.2-1.2 4.2-3.75V.012h-4.59v12.51c0 1.74-1.29 2.31-2.07 2.31-.69 0-1.12.3-1.12.72 0 .54.495.69 1.125.84l2.19.495c2.31.525 3.51 1.74 3.51 4.155z"></path></svg>, view: 'pitchfork', bgColor: '#000000' },
         ]
     },
     {
@@ -67,6 +71,7 @@ const appCategories: AppCategory[] = [
             { name: 'S for A', description: 'Manage your artist profile', icon: <SpotifyIcon className="w-8 h-8"/>, view: 'spotifyForArtists', bgColor: '#402000' },
             { name: 'Spotify Charts', description: 'Weekly top songs and albums', icon: <ChartBarIcon className="w-8 h-8"/>, view: 'spotifyChart', bgColor: '#1DB954' },
             { name: 'GRAMMYs', description: 'Your awards history', icon: <TrophyIcon className="w-8 h-8"/>, view: 'grammys', bgColor: '#f59e0b' },
+            { name: 'Oscars', description: 'Your film awards history', icon: <OscarAwardIcon className="w-8 h-8" />, view: 'oscars', bgColor: '#c7a34a' },
             { name: 'Achievements', description: 'View career milestones', icon: <TrophyIcon className="w-8 h-8"/>, view: 'achievements', bgColor: '#ca8a04' },
             { name: 'Chart History', description: 'Your all-time chart stats', icon: <ChartBarIcon className="w-8 h-8"/>, view: 'chartHistory', bgColor: '#0ea5e9' },
         ]

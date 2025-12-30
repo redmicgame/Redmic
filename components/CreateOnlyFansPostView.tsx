@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import { OnlyFansPost } from '../types';
@@ -51,6 +50,8 @@ const CreateOnlyFansPostView: React.FC = () => {
         dispatch({ type: 'CHANGE_VIEW', payload: 'onlyfans' });
     };
 
+    const prices = [0, 2.99, 4.99, 7.99];
+
     return (
         <div className="h-screen w-full bg-zinc-900 overflow-y-auto">
             <header className="p-4 flex items-center gap-4 sticky top-0 bg-zinc-900/80 backdrop-blur-sm z-10 border-b border-zinc-700/50">
@@ -77,8 +78,19 @@ const CreateOnlyFansPostView: React.FC = () => {
                 </div>
 
                 <div>
-                    <label htmlFor="price" className="block text-sm font-medium text-zinc-300">Post Price (0 for free)</label>
-                    <input type="number" id="price" value={price} onChange={e => setPrice(Number(e.target.value))} min="0" step="1" className="mt-1 block w-full bg-zinc-700 h-10 px-3 rounded-md"/>
+                    <label className="block text-sm font-medium text-zinc-300">Post Price</label>
+                    <div className="mt-2 grid grid-cols-4 gap-2">
+                        {prices.map(p => (
+                            <button 
+                                key={p}
+                                type="button" 
+                                onClick={() => setPrice(p)} 
+                                className={`py-2 rounded-md font-semibold ${price === p ? 'bg-red-600' : 'bg-zinc-700 hover:bg-zinc-600'}`}
+                            >
+                                {p === 0 ? 'Free' : `$${p.toFixed(2)}`}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {error && <p className="text-red-400 text-sm text-center">{error}</p>}

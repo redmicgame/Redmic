@@ -1,11 +1,10 @@
 
-
 import { Label, Manager, SecurityTeam } from './types';
 import { ArtistData } from './types';
 
 export const INITIAL_MONEY = 100000;
 
-export const GENRES = ['Pop', 'Hip Hop', 'R&B', 'Rock', 'Electronic', 'Indie', 'Country', 'Christmas'];
+export const GENRES = ['Pop', 'Hip Hop', 'R&B', 'Rock', 'Electronic', 'Indie', 'Country', 'Christmas', 'K-Pop', 'Latin', 'Afrobeats', 'Reggae'];
 
 export const STUDIOS = [
     { name: 'Voice Memos', cost: 0, qualityRange: [1, 5] },
@@ -218,6 +217,39 @@ export const LABELS: Label[] = [
             subscribers: 5_100_000,
             banner: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
         }
+    },
+    { 
+        id: 'quality_control', 
+        name: 'Quality Control Music', 
+        tier: 'Mid-high',
+        logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMiIgZmlsbD0iYmxhY2siLz48dGV4dCB4PSIzMiIgeT0iMzciIGZvbnQtZmFtaWx5PSJzZXJpZiIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5RQzwvdGV4dD48L3N2Zz4=',
+        promotionMultiplier: 1.6, 
+        creativeControl: 65,
+        minQuality: 70,
+        streamRequirement: 0,
+        contractType: 'petty'
+    },
+    { 
+        id: 'tde', 
+        name: 'Top Dawg Entertainment', 
+        tier: 'Top',
+        logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMiIgZmlsbD0iYmxhY2siLz48dGV4dCB4PSIzMiIgeT0iMzciIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjIyIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+VERFPC90ZXh0Pjwvc3ZnPg==',
+        promotionMultiplier: 1.8, 
+        creativeControl: 85,
+        minQuality: 70,
+        streamRequirement: 0,
+        contractType: 'petty'
+    },
+    { 
+        id: 'roc_nation', 
+        name: 'Roc Nation', 
+        tier: 'Top',
+        logo: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIzMiIgY3k9IjMyIiByPSIzMiIgZmlsbD0iYmxhY2siLz48cGF0aCBkPSJNMjEuNSA0MC41TDUwLjUgMTguNUwzMi41IDM0LjVMMzggNDUuNUwyMS41IDQwLjVaIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==',
+        promotionMultiplier: 1.9, 
+        creativeControl: 80,
+        minQuality: 70,
+        streamRequirement: 0,
+        contractType: 'petty'
     }
 ];
 

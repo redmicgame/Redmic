@@ -1,4 +1,5 @@
 
+
 export interface Artist {
     id: string;
     name: string;
@@ -50,6 +51,8 @@ export interface Song {
         qualityBoost: number;
     };
     lastCertification?: string;
+    isTakenDown?: boolean;
+    reRecordingOf?: string; // ID of the original song
 }
 
 export type ReleaseType = 'Single' | 'EP' | 'Album' | 'Album (Deluxe)';
@@ -80,6 +83,7 @@ export interface Release {
     wikipediaSummary?: string;
     soundtrackInfo?: { albumTitle: string };
     lastCertification?: string;
+    isTakenDown?: boolean;
 }
 
 export interface Video {
@@ -164,6 +168,20 @@ export interface GrammyRedCarpetOffer {
     isAttending?: boolean;
 }
 
+export interface OscarsSubmissionOffer {
+    type: 'oscarSubmission';
+    emailId: string;
+    isSubmitted: boolean;
+}
+
+export interface OscarsNominationOffer {
+    type: 'oscarNominations';
+    emailId: string;
+    hasPerformanceOffer: boolean;
+    isPerformanceAccepted?: boolean;
+}
+
+
 export interface LeakNotification {
     type: 'leak';
     songId: string;
@@ -231,12 +249,12 @@ export interface FeatureReleaseNotification {
 export interface Email {
     id: string;
     sender: string;
-    senderIcon?: 'spotify' | 'youtube' | 'default' | 'label' | 'genius' | 'fallon' | 'popbase' | 'grammys' | 'x' | 'onlyfans' | 'soundtrack' | 'touringdata' | 'business' | 'vogue' | 'feature' | 'ontheradar' | 'trshd';
+    senderIcon?: 'spotify' | 'youtube' | 'default' | 'label' | 'genius' | 'fallon' | 'popbase' | 'grammys' | 'x' | 'onlyfans' | 'soundtrack' | 'touringdata' | 'business' | 'vogue' | 'feature' | 'ontheradar' | 'trshd' | 'oscars';
     subject: string;
     body: string;
     date: GameDate;
     isRead: boolean;
-    offer?: GeniusOffer | FallonOffer | PopBaseOffer | GrammySubmissionOffer | GrammyNominationOffer | GrammyRedCarpetOffer | LeakNotification | XSuspensionEmail | XAppealResultEmail | OnlyFansOffer | SoundtrackOffer | TouringDataUpdate | VogueOffer | FeatureOffer | FeatureReleaseNotification | OnTheRadarOffer | TrshdOffer;
+    offer?: GeniusOffer | FallonOffer | PopBaseOffer | GrammySubmissionOffer | GrammyNominationOffer | GrammyRedCarpetOffer | LeakNotification | XSuspensionEmail | XAppealResultEmail | OnlyFansOffer | SoundtrackOffer | TouringDataUpdate | VogueOffer | FeatureOffer | FeatureReleaseNotification | OnTheRadarOffer | TrshdOffer | OscarsSubmissionOffer | OscarsNominationOffer;
 }
 
 export interface GameDate {
@@ -320,7 +338,7 @@ export interface ChartHistory {
 }
 
 export interface Label {
-    id: 'umg' | 'republic' | 'rca' | 'island' | 'interscope' | 'columbia' | 'atlantic' | 'epic';
+    id: 'umg' | 'republic' | 'rca' | 'island' | 'interscope' | 'columbia' | 'atlantic' | 'epic' | 'quality_control' | 'tde' | 'roc_nation';
     name: string;
 // FIX: Corrected typo 'Mid-High' to 'Mid-high' to match usage.
     tier: 'Top' | 'Mid-high' | 'Mid-Low' | 'Low';
@@ -335,6 +353,7 @@ export interface Label {
         subscribers: number;
         banner: string;
     };
+    contractType?: 'standard' | 'petty';
 }
 
 export interface CustomLabel {
@@ -441,6 +460,15 @@ export interface GrammyAward {
     isWinner: boolean;
 }
 
+export interface OscarAward {
+    year: number;
+    category: 'Best Original Song';
+    itemId: string; // songId
+    itemName: string;
+    artistName: string;
+    isWinner: boolean;
+}
+
 export interface GrammyContender {
     id: string;
     name: string;
@@ -450,13 +478,29 @@ export interface GrammyContender {
     coverArt?: string;
 }
 
+export interface OscarContender {
+    id: string;
+    name: string;
+    artistName: string;
+    isPlayer: boolean;
+    score: number;
+    coverArt?: string;
+}
+
+
 export interface GrammyCategory {
     name: 'Best New Artist' | 'Record of the Year' | 'Song of the Year' | 'Album of the Year' | 'Best Pop Song' | 'Best Rap Song' | 'Best R&B Song' | 'Pop Album' | 'Rap Album' | 'R&B Album';
     nominees: GrammyContender[];
     winner?: GrammyContender;
 }
 
-export type GameView = 'game' | 'spotify' | 'studio' | 'release' | 'pitchfork' | 'youtube' | 'createVideo' | 'merchStore' | 'inbox' | 'catalog' | 'promote' | 'billboard' | 'spotifyChart' | 'youtubeVideoDetail' | 'youtubeStudio' | 'gigs' | 'labelReleasePlan' | 'createGeniusInterview' | 'x' | 'xProfile' | 'xChatDetail' | 'spotifyForArtists' | 'createFallonPerformance' | 'createFallonInterview' | 'spotifyAlbumCountdown' | 'createLabel' | 'albumPromo' | 'billboardAlbums' | 'achievements' | 'redMicProUnlock' | 'redMicProDashboard' | 'wikipedia' | 'grammys' | 'submitForGrammys' | 'createGrammyPerformance' | 'grammyRedCarpet' | 'contractRenewal' | 'itunes' | 'onlyfansSetup' | 'onlyfans' | 'createOnlyFansPost' | 'chartHistory' | 'albumSalesChart' | 'labels' | 'releaseHub' | 'createSoundtrack' | 'spotifySoundtrackDetail' | 'gameGuide' | 'tours' | 'createTour' | 'tourDetail' | 'management' | 'security' | 'spotifyTopSongs' | 'spotifyTopAlbums' | 'createVogueFeature' | 'spotifyWrapped' | 'hotPopSongs' | 'hotRapRnb' | 'electronicChart' | 'countryChart' | 'createFeature' | 'createOnTheRadarPerformance' | 'createTrshdPerformance';
+export interface OscarCategory {
+    name: 'Best Original Song';
+    nominees: OscarContender[];
+    winner?: OscarContender;
+}
+
+export type GameView = 'game' | 'spotify' | 'studio' | 'release' | 'pitchfork' | 'youtube' | 'createVideo' | 'merchStore' | 'inbox' | 'catalog' | 'promote' | 'billboard' | 'spotifyChart' | 'youtubeVideoDetail' | 'youtubeStudio' | 'gigs' | 'labelReleasePlan' | 'createGeniusInterview' | 'x' | 'xProfile' | 'xChatDetail' | 'spotifyForArtists' | 'createFallonPerformance' | 'createFallonInterview' | 'spotifyAlbumCountdown' | 'createLabel' | 'albumPromo' | 'billboardAlbums' | 'achievements' | 'redMicProUnlock' | 'redMicProDashboard' | 'wikipedia' | 'grammys' | 'submitForGrammys' | 'createGrammyPerformance' | 'grammyRedCarpet' | 'contractRenewal' | 'itunes' | 'onlyfansSetup' | 'onlyfans' | 'createOnlyFansPost' | 'chartHistory' | 'albumSalesChart' | 'labels' | 'releaseHub' | 'createSoundtrack' | 'spotifySoundtrackDetail' | 'gameGuide' | 'tours' | 'createTour' | 'tourDetail' | 'management' | 'security' | 'spotifyTopSongs' | 'spotifyTopAlbums' | 'createVogueFeature' | 'spotifyWrapped' | 'hotPopSongs' | 'hotRapRnb' | 'electronicChart' | 'countryChart' | 'createFeature' | 'createOnTheRadarPerformance' | 'createTrshdPerformance' | 'appleMusic' | 'oscars' | 'submitForOscars' | 'createOscarPerformance';
 
 export type Tab = 'Home' | 'Apps' | 'Charts' | 'Misc' | 'Business';
 
@@ -623,6 +667,8 @@ export interface ArtistData {
     // GRAMMYs
     grammyHistory: GrammyAward[];
     hasSubmittedForBestNewArtist: boolean;
+    // Oscars
+    oscarHistory: OscarAward[];
     // OnlyFans
     onlyfans: OnlyFansProfile | null;
     fanWarStatus: { targetArtistName: string; weeksRemaining: number; } | null;
@@ -697,6 +743,10 @@ export interface GameState {
     grammyCurrentYearNominations: GrammyCategory[] | null;
     activeGrammyPerformanceOffer: { emailId: string } | null;
     activeGrammyRedCarpetOffer: { emailId: string } | null;
+    // Oscars
+    oscarSubmissions: { artistId: string, category: 'Best Original Song', itemId: string, itemName: string }[];
+    oscarCurrentYearNominations: OscarCategory[] | null;
+    activeOscarPerformanceOffer: { emailId: string } | null;
 }
 
 export type GameAction =
@@ -772,6 +822,11 @@ export type GameAction =
     | { type: 'DECLINE_GRAMMY_PERFORMANCE'; payload: { emailId: string } }
     | { type: 'ACCEPT_GRAMMY_RED_CARPET'; payload: { emailId: string, lookUrl: string } }
     | { type: 'DECLINE_GRAMMY_RED_CARPET'; payload: { emailId: string } }
+    | { type: 'GO_TO_OSCAR_SUBMISSIONS'; payload: { emailId: string } }
+    | { type: 'SUBMIT_FOR_OSCARS'; payload: { submissions: GameState['oscarSubmissions'], emailId: string } }
+    | { type: 'ACCEPT_OSCAR_PERFORMANCE'; payload: { emailId: string } }
+    | { type: 'CREATE_OSCAR_PERFORMANCE'; payload: { video: Video } }
+    | { type: 'DECLINE_OSCAR_PERFORMANCE'; payload: { emailId: string } }
     | { type: 'RENEW_CONTRACT' }
     | { type: 'GO_INDEPENDENT' }
     | { type: 'UPDATE_ARTIST_IMAGE'; payload: { artistId: string; newImage: string } }

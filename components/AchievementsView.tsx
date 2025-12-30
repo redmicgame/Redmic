@@ -12,8 +12,8 @@ const AchievementCard: React.FC<{ title: string; children: React.ReactNode; acce
     </div>
 );
 
-const ItemRow: React.FC<{ item: Song | Release | Video; value: number; rank: number }> = ({ item, value, rank }) => (
-    <div className={`flex items-center gap-3 p-2 rounded-lg transition-colors`}>
+const ItemRow: React.FC<{ item: Song | Release | Video; value: number; rank: number; isFaded?: boolean }> = ({ item, value, rank, isFaded }) => (
+    <div className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${isFaded ? 'opacity-50' : ''}`}>
         <div className="flex items-center justify-center font-bold w-6 text-center text-zinc-400">
             {rank}
         </div>
@@ -46,7 +46,7 @@ const ExpandableList: React.FC<{
             <div className="overflow-hidden transition-all duration-300 ease-in-out" style={{ maxHeight: isExpanded ? `${expandedHeight}px` : `${listHeight}px` }}>
                 <div className="space-y-1">
                     {displayedItems.map((item, i) => (
-                        <ItemRow key={item.id} item={item} value={getValue(item)} rank={i + 1} />
+                        <ItemRow key={item.id} item={item} value={getValue(item)} rank={i + 1} isFaded={'isTakenDown' in item ? item.isTakenDown : false} />
                     ))}
                 </div>
             </div>
@@ -106,7 +106,7 @@ const AchievementsView: React.FC = () => {
             </header>
             <main className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {mostStreamedSong && (
-                    <div className="md:col-span-2 bg-gradient-to-tr from-red-500/20 via-zinc-800 to-zinc-900 border border-red-500/30 p-4 rounded-xl flex flex-col md:flex-row items-center gap-6">
+                    <div className={`md:col-span-2 bg-gradient-to-tr from-red-500/20 via-zinc-800 to-zinc-900 border border-red-500/30 p-4 rounded-xl flex flex-col md:flex-row items-center gap-6 ${mostStreamedSong.isTakenDown ? 'opacity-50' : ''}`}>
                         <img src={mostStreamedSong.coverArt} alt={mostStreamedSong.title} className="w-32 h-32 md:w-40 md:h-40 rounded-lg object-cover shadow-2xl shadow-red-900/50" />
                         <div className="text-center md:text-left">
                             <p className="text-sm font-bold text-red-400 uppercase tracking-widest">Your Biggest Hit</p>

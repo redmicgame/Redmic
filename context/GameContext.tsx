@@ -1,7 +1,7 @@
 
 import React, { createContext, useReducer, useContext, ReactNode, useEffect, useState } from 'react';
 import { db } from '../db/db';
-import type { GameState, GameAction, Email, NpcSong, ChartEntry, ChartHistory, ArtistData, Artist, Group, Song, LabelSubmission, Contract, Release, XUser, XPost, XTrend, XChat, CustomLabel, PopBaseOffer, NpcAlbum, AlbumChartEntry, RedMicProState, GrammyCategory, GrammyAward, GrammyContender, OnlyFansProfile, OnlyFansPost, XSuspensionStatus, SoundtrackAlbum, SoundtrackTrack, Manager, SecurityTeam, Label, VoguePhotoshoot, FeatureOffer } from '../types';
+import type { GameState, GameAction, Email, NpcSong, ChartEntry, ChartHistory, ArtistData, Artist, Group, Song, LabelSubmission, Contract, Release, XUser, XPost, XTrend, XChat, CustomLabel, PopBaseOffer, NpcAlbum, AlbumChartEntry, RedMicProState, GrammyCategory, GrammyAward, GrammyContender, OscarCategory, OscarAward, OscarContender, OnlyFansProfile, OnlyFansPost, XSuspensionStatus, SoundtrackAlbum, SoundtrackTrack, Manager, SecurityTeam, Label, VoguePhotoshoot, FeatureOffer } from '../types';
 import { INITIAL_MONEY, STREAM_INCOME_MULTIPLIER, SUBSCRIBER_THRESHOLD_STORE, VIEW_INCOME_MULTIPLIER, NPC_ARTIST_NAMES, NPC_SONG_ADJECTIVES, NPC_SONG_NOUNS, NPC_COVER_ART, LABELS, PLAYLIST_PITCH_COST, PLAYLIST_PITCH_SUCCESS_RATE, PLAYLIST_BOOST_MULTIPLIER, PLAYLIST_BOOST_WEEKS, GENRES, MANAGERS, SECURITY_TEAMS, GIGS } from '../constants';
 import { generateWeeklyXContent } from '../utils/xContentGenerator';
 import { REAL_WORLD_DISCOGRAPHIES } from '../realWorldDiscographies';
@@ -266,6 +266,7 @@ const initialArtistData: ArtistData = {
     isGoldTheme: false,
     grammyHistory: [],
     hasSubmittedForBestNewArtist: false,
+    oscarHistory: [],
     onlyfans: null,
     fanWarStatus: null,
     // Soundtracks
@@ -322,6 +323,9 @@ const initialState: GameState = {
     grammyCurrentYearNominations: null,
     activeGrammyPerformanceOffer: null,
     activeGrammyRedCarpetOffer: null,
+    oscarSubmissions: [],
+    oscarCurrentYearNominations: null,
+    activeOscarPerformanceOffer: null,
 };
 
 const GameContext = createContext<{
@@ -1292,7 +1296,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 
                 let totalWeeklyStreams = 0;
                 const updatedSongs = artistData.songs.map(song => {
-                    if (song.isReleased) {
+                    if (song.isReleased && !song.isTakenDown) {
                         const baseStreams = (song.quality ** 2) * 50;
                         let weeklyStreams = Math.floor(baseStreams * hypeMultiplier * labelMultiplier * popularityMultiplier * (Math.random() * 0.4 + 0.8)); 
 
@@ -1361,6 +1365,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                             ...firstWeekStreamsData,
                             playlistBoostWeeks: newPlaylistBoostWeeks,
                             dailyStreams: newDailyStreams,
+                        };
+                    }
+                    
+                    if (song.isTakenDown) {
+                        return {
+                            ...song,
+                            prevWeekStreams: song.lastWeekStreams || 0,
+                            lastWeekStreams: 0,
                         };
                     }
                     return song;
@@ -1648,7 +1660,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                             const weeksSinceSubmission = (newDate.year * 52 + newDate.week) - (sub.submittedDate.year * 52 + sub.submittedDate.week);
                             if (weeksSinceSubmission >= 2) {
                                 const avgQuality = sub.release.songIds.reduce((sum, id) => sum + (artistData.songs.find(s => s.id === id)?.quality || 0), 0) / sub.release.songIds.length;
-                                const minQuality = label.minQuality ?? 0;
+                                
+                                let minQuality = label.minQuality ?? 0;
+                                let feedback = `The average quality of ${avgQuality.toFixed(0)} didn't meet our standard of ${minQuality}. Back to the drawing board.`;
+
+                                if (label.contractType === 'petty' && avgQuality < 70) {
+                                    minQuality = 70; // Hard override for petty labels
+                                    feedback = `The average quality of ${avgQuality.toFixed(0)} is unacceptable. We require a minimum quality of 70 for all releases. Do better.`;
+                                }
 
                                 if (avgQuality >= minQuality) {
                                     newEmails.push({
@@ -1658,7 +1677,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                                     });
                                     return { ...sub, status: 'awaiting_player_input', decisionDate: newDate };
                                 } else {
-                                    const feedback = `The average quality of ${avgQuality.toFixed(0)} didn't meet our standard of ${minQuality}. Back to the drawing board.`;
                                     newEmails.push({
                                         id: crypto.randomUUID(), sender: label.name, subject: `Submission Update: "${sub.release.title}"`,
                                         body: `Hi ${artistProfile?.name},\n\nAfter careful consideration, we've decided to pass on releasing "${sub.release.title}" at this time. ${feedback}\n\n- ${label.name}`,
@@ -2342,9 +2360,133 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 });
             });
             
+            // --- AWARDS LOGIC ---
+            let finalState: GameState = { ...state };
+            
+            // --- OSCARS LOGIC ---
+            let newOscarNominations: GameState['oscarCurrentYearNominations'] = state.oscarCurrentYearNominations;
+            
+            // Week 1: Oscar Submission Email
+            if (newDate.week === 1) {
+                for (const artistId in updatedArtistsData) {
+                    const artistData = updatedArtistsData[artistId];
+                    const artistProfile = allPlayerArtistsAndGroups.find(a => a.id === artistId);
+                    const hasOscarEmailThisYear = artistData.inbox.some(e => e.offer?.type === 'oscarSubmission' && e.date.year === newDate.year);
+                    
+                    if (artistProfile && !hasOscarEmailThisYear) {
+                        const eligibleSongs = artistData.songs.filter(s => {
+                            const release = artistData.releases.find(r => r.id === s.releaseId);
+                            return s.soundtrackTitle && release && release.releaseDate.year === newDate.year - 1;
+                        });
+
+                        if (eligibleSongs.length > 0) {
+                            const emailId = crypto.randomUUID();
+                            artistData.inbox.push({
+                                id: emailId,
+                                sender: 'The Academy',
+                                senderIcon: 'oscars',
+                                subject: `Submit for the ${newDate.year} Academy Awards`,
+                                body: `Hi ${artistProfile.name},\n\nThe submission window for Best Original Song at the ${newDate.year} Academy Awards is open. Please submit your eligible soundtrack releases from last year.\n\n- The Academy of Motion Picture Arts and Sciences`,
+                                date: newDate,
+                                isRead: false,
+                                offer: { type: 'oscarSubmission', emailId, isSubmitted: false }
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // Week 5: Determine Oscar Nominations
+            if (newDate.week === 5 && state.oscarSubmissions.length > 0) {
+                const categoryName = 'Best Original Song';
+                const contenders: OscarContender[] = [];
+
+                // Player contenders
+                for (const sub of state.oscarSubmissions) {
+                    const artistData = updatedArtistsData[sub.artistId];
+                    const artistProfile = allPlayerArtistsAndGroups.find(a => a.id === sub.artistId);
+                    const song = artistData.songs.find(s => s.id === sub.itemId);
+                    if (artistData && artistProfile && song) {
+                        const score = (song.quality * 3) + (song.streams / 1000000);
+                        contenders.push({ id: song.id, name: song.title, artistName: artistProfile.name, isPlayer: true, score, coverArt: song.coverArt });
+                    }
+                }
+
+                // NPC contenders
+                const npcSongsForOscars = [...newNpcsList].sort((a,b) => b.basePopularity - a.basePopularity).slice(0, 10);
+                npcSongsForOscars.forEach(song => {
+                    contenders.push({ id: song.uniqueId, name: song.title, artistName: song.artist, isPlayer: false, score: (song.basePopularity / 100000) * 1.5, coverArt: song.coverArt || NPC_COVER_ART });
+                });
+
+                contenders.sort((a,b) => b.score - a.score);
+                const nominees = contenders.slice(0, 5);
+
+                if (nominees.length > 0) {
+                    newOscarNominations = [{ name: categoryName, nominees, winner: nominees[0] }];
+                    
+                    const playerNominee = nominees.find(n => n.isPlayer);
+                    if (playerNominee) {
+                        const artistData = updatedArtistsData[playerNominee.artistName === state.soloArtist?.name ? state.soloArtist.id : state.group!.id];
+                        const artistProfile = allPlayerArtistsAndGroups.find(a => a.name === playerNominee.artistName);
+
+                        if(artistData && artistProfile) {
+                            artistData.popularity = Math.min(100, artistData.popularity + 5);
+                            const hasPerformanceOffer = Math.random() < 0.5;
+                            let body = `Dear ${artistProfile.name},\n\nCongratulations! The Academy is pleased to announce your nomination for Best Original Song for "${playerNominee.name}".`;
+                            if (hasPerformanceOffer) {
+                                body += `\n\nAdditionally, we would be honored to have you perform at the ceremony. Please respond to accept.`;
+                            }
+                            body += `\n\nSincerely,\nThe Academy`;
+                            const emailId = crypto.randomUUID();
+                            artistData.inbox.push({
+                                id: emailId, sender: 'The Academy', senderIcon: 'oscars', subject: 'Congratulations! You\'re an Oscar Nominee!',
+                                body, date: newDate, isRead: false, offer: { type: 'oscarNominations', emailId, hasPerformanceOffer }
+                            });
+                        }
+                    }
+
+                    let postContent = `The nominees for Best Original Song at the ${newDate.year} #Oscars have been announced:\n\n`;
+                    postContent += nominees.map(n => `• ${n.isPlayer ? `**${n.name}**` : n.name} (${n.artistName})`).join('\n');
+                    Object.values(updatedArtistsData).forEach(d => d.xPosts.unshift({
+                        id: crypto.randomUUID(), authorId: 'popbase', content: postContent,
+                        likes: Math.floor(Math.random() * 60000) + 30000, retweets: Math.floor(Math.random() * 15000) + 7000,
+                        views: Math.floor(Math.random() * 2000000) + 800000, date: newDate,
+                    }));
+                }
+            }
+
+            // Week 10: Oscar Ceremony
+            if (newDate.week === 10 && state.oscarCurrentYearNominations) {
+                const category = state.oscarCurrentYearNominations[0];
+                if (category.winner) {
+                     const winner = category.winner;
+                     const content = `The Oscar for Best Original Song goes to... "${winner.name}" by ${winner.artistName}! #Oscars`;
+                     Object.values(updatedArtistsData).forEach(d => d.xPosts.unshift({
+                        id: crypto.randomUUID(), authorId: 'popbase', content, image: winner.coverArt,
+                        likes: Math.floor(Math.random() * 100000) + 50000, retweets: Math.floor(Math.random() * 20000) + 10000,
+                        views: Math.floor(Math.random() * 5000000) + 2000000, date: newDate,
+                     }));
+                }
+
+                for (const artistId in updatedArtistsData) {
+                    const artistData = updatedArtistsData[artistId];
+                    const artistProfile = allPlayerArtistsAndGroups.find(a => a.id === artistId);
+                    const nomination = category.nominees.find(n => n.isPlayer && n.artistName === artistProfile?.name);
+                    if (nomination) {
+                        const isWinner = category.winner?.id === nomination.id;
+                        if(isWinner) artistData.popularity = Math.min(100, artistData.popularity + 10);
+                        artistData.oscarHistory.push({
+                            year: newDate.year, category: 'Best Original Song', itemId: nomination.id,
+                            itemName: nomination.name, artistName: nomination.artistName, isWinner
+                        });
+                    }
+                }
+                finalState.oscarSubmissions = [];
+                finalState.oscarCurrentYearNominations = null;
+            }
+
             // --- GRAMMYS LOGIC ---
             let newGrammyNominations: GameState['grammyCurrentYearNominations'] = state.grammyCurrentYearNominations;
-            let finalState: GameState = { ...state };
             
             // Week 45: Determine Grammy Nominations
             if (newDate.week === 45 && state.grammySubmissions.length > 0) {
@@ -2666,6 +2808,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                     npcs: newNpcsWithReleases,
                     npcAlbums: newNpcAlbums,
                     grammyCurrentYearNominations: newGrammyNominations,
+                    oscarCurrentYearNominations: newOscarNominations,
                     contractRenewalOffer: contractRenewalForActivePlayer,
                     currentView: 'contractRenewal'
                 };
@@ -2692,6 +2835,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 npcs: newNpcsWithReleases,
                 npcAlbums: newNpcAlbums,
                 grammyCurrentYearNominations: newGrammyNominations,
+                oscarCurrentYearNominations: newOscarNominations,
             };
         }
         case 'RECORD_SONG': {
@@ -3066,19 +3210,57 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         }
         case 'END_CONTRACT': {
             if (!state.activeArtistId) return state;
-            const activeData = state.artistsData[state.activeArtistId];
+            const activeData = { ...state.artistsData[state.activeArtistId] };
             if (!activeData.contract) {
                 return state;
             }
+
+            const label = LABELS.find(l => l.id === activeData.contract!.labelId);
+            if (label && label.contractType === 'petty') {
+                const fine = Math.floor(Math.random() * 750001) + 250000;
+                activeData.money -= fine;
+
+                const takenDownReleaseIds = new Set<string>();
+                activeData.releases = activeData.releases.map(release => {
+                    if (release.releasingLabel?.name === label.name) {
+                        takenDownReleaseIds.add(release.id);
+                        return { ...release, isTakenDown: true };
+                    }
+                    return release;
+                });
+
+                activeData.songs = activeData.songs.map(song => {
+                    if (song.releaseId && takenDownReleaseIds.has(song.releaseId)) {
+                        return { ...song, isTakenDown: true };
+                    }
+                    return song;
+                });
+
+                const artistProfile = allPlayerArtistsAndGroups.find(a => a.id === state.activeArtistId);
+                if (artistProfile) {
+                    activeData.inbox.push({
+                        id: crypto.randomUUID(),
+                        sender: label.name,
+                        senderIcon: 'label',
+                        subject: 'Regarding Your Departure',
+                        body: `Hi ${artistProfile.name},\n\nWe've processed your departure from the label. As per our agreement, a fine of $${formatNumber(fine)} has been deducted from your account.\n\nFurthermore, all projects released under our name have been removed from streaming services and digital storefronts.\n\nWe wish you the best in your future endeavors.\n\n- ${label.name}`,
+                        date: state.date,
+                        isRead: false,
+                    });
+                }
+            }
+            
+            const updatedData = {
+                ...activeData,
+                contractHistory: [...(activeData.contractHistory || []), activeData.contract],
+                contract: null,
+            };
+
             return {
                 ...state,
                 artistsData: {
                     ...state.artistsData,
-                    [state.activeArtistId]: {
-                        ...activeData,
-                        contractHistory: [...(activeData.contractHistory || []), activeData.contract],
-                        contract: null,
-                    }
+                    [state.activeArtistId]: updatedData
                 }
             };
         }
@@ -4189,6 +4371,99 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
                 artistsData: { ...state.artistsData, [state.activeArtistId]: { ...activeData, inbox: updatedInbox }},
                 currentView: 'inbox',
                 activeGrammyRedCarpetOffer: null
+            };
+        }
+        case 'GO_TO_OSCAR_SUBMISSIONS': {
+            if (!state.activeArtistId) return state;
+            const activeData = state.artistsData[state.activeArtistId];
+            const updatedInbox = activeData.inbox.map(email => {
+                if (email.id === action.payload.emailId) {
+                    return { ...email, isRead: true };
+                }
+                return email;
+            });
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: {
+                        ...activeData,
+                        inbox: updatedInbox,
+                    }
+                },
+                currentView: 'submitForOscars'
+            };
+        }
+        case 'SUBMIT_FOR_OSCARS': {
+            if (!state.activeArtistId) return state;
+            const { submissions, emailId } = action.payload;
+            const activeData = state.artistsData[state.activeArtistId];
+            const updatedInbox = activeData.inbox.map(email => {
+                if (email.id === emailId && email.offer?.type === 'oscarSubmission') {
+                    return { ...email, offer: { ...email.offer, isSubmitted: true }};
+                }
+                return email;
+            });
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: {
+                        ...activeData,
+                        inbox: updatedInbox,
+                    }
+                },
+                oscarSubmissions: [...state.oscarSubmissions, ...submissions],
+                currentView: 'game'
+            };
+        }
+        case 'ACCEPT_OSCAR_PERFORMANCE': {
+            if (!state.activeArtistId) return state;
+            return {
+                ...state,
+                activeOscarPerformanceOffer: { emailId: action.payload.emailId },
+                currentView: 'createOscarPerformance',
+            };
+        }
+        case 'CREATE_OSCAR_PERFORMANCE': {
+            if (!state.activeArtistId || !state.activeOscarPerformanceOffer) return state;
+            const { video } = action.payload;
+            const activeData = state.artistsData[state.activeArtistId];
+            const updatedInbox = activeData.inbox.map(email => {
+                if (email.id === state.activeOscarPerformanceOffer!.emailId && email.offer?.type === 'oscarNominations') {
+                    return { ...email, offer: { ...email.offer, isPerformanceAccepted: true }};
+                }
+                return email;
+            });
+            return {
+                ...state,
+                artistsData: {
+                    ...state.artistsData,
+                    [state.activeArtistId]: {
+                        ...activeData,
+                        videos: [...activeData.videos, video],
+                        hype: Math.min(100, activeData.hype + 40),
+                        inbox: updatedInbox,
+                    }
+                },
+                activeOscarPerformanceOffer: null,
+                currentView: 'game',
+            };
+        }
+        case 'DECLINE_OSCAR_PERFORMANCE': {
+            if (!state.activeArtistId) return state;
+            const activeData = state.artistsData[state.activeArtistId];
+            const updatedInbox = activeData.inbox.map(email => {
+                if (email.id === action.payload.emailId && email.offer?.type === 'oscarNominations') {
+                    return { ...email, offer: { ...email.offer, isPerformanceAccepted: false }};
+                }
+                return email;
+            });
+            return {
+                ...state,
+                artistsData: { ...state.artistsData, [state.activeArtistId]: { ...activeData, inbox: updatedInbox }},
+                activeOscarPerformanceOffer: null,
+                currentView: 'inbox',
             };
         }
         case 'RENEW_CONTRACT': {

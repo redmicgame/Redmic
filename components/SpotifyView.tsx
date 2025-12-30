@@ -5,7 +5,7 @@ import ChevronLeftIcon from './icons/ChevronLeftIcon';
 import DotsHorizontalIcon from './icons/DotsHorizontalIcon';
 import ShuffleIcon from './icons/ShuffleIcon';
 import TrianglePlayIcon from './icons/TrianglePlayIcon';
-import type { Song, Release } from '../types';
+import type { Song, Release, GameDate } from '../types';
 import SpotifyDiscographyView from './SpotifyDiscographyView';
 import SpotifyReleaseDetailView from './SpotifyReleaseDetailView';
 
@@ -40,6 +40,20 @@ const PopularReleaseItem: React.FC<{ release: Release; isLatest: boolean; onClic
     );
 };
 
+const UpcomingReleaseItem: React.FC<{ release: Release; releaseDate: GameDate; onClick: () => void; }> = ({ release, releaseDate, onClick }) => {
+    return (
+        <button onClick={onClick} className="flex w-full text-left items-center gap-4 group cursor-pointer">
+            <img src={release.coverArt} alt={release.title} className="w-16 h-16 rounded object-cover" />
+            <div className="flex-grow">
+                <p className="font-semibold text-white text-lg">{release.title}</p>
+                <p className="text-sm text-zinc-400">
+                    Coming Soon • Releasing W{releaseDate.week}, {releaseDate.year}
+                </p>
+            </div>
+        </button>
+    );
+};
+
 
 const SpotifyView: React.FC = () => {
     const { gameState, dispatch, activeArtist, activeArtistData } = useGame();
@@ -50,7 +64,8 @@ const SpotifyView: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     if (!activeArtist || !activeArtistData) return null;
-    const { monthlyListeners, songs, releases, artistPick } = activeArtistData;
+    const { monthlyListeners, songs, releases, artistPick, labelSubmissions } = activeArtistData;
+    const { date } = gameState;
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && activeArtist) {
@@ -70,30 +85,26 @@ const SpotifyView: React.FC = () => {
     };
 
     const topSongs = songs
-        .filter(s => s.isReleased)
+        .filter(s => s.isReleased && !s.isTakenDown)
         .sort((a, b) => (b.lastWeekStreams || 0) - (a.lastWeekStreams || 0))
         .slice(0, 10);
         
     const popularSongsToShow = isPopularExpanded ? topSongs : topSongs.slice(0, 5);
 
     const popularReleases = (() => {
-        if (releases.length === 0) {
+        const availableReleases = releases.filter(r => !r.isTakenDown && !r.soundtrackInfo);
+
+        if (availableReleases.length === 0) {
             return [];
         }
 
-        const releasesWithStreams = releases
-            .filter(r => !r.soundtrackInfo)
-            .map(release => {
+        const releasesWithStreams = availableReleases.map(release => {
             const totalStreams = release.songIds.reduce((sum, songId) => {
                 const song = songs.find(s => s.id === songId);
                 return sum + (song?.streams || 0);
             }, 0);
             return { ...release, totalStreams };
         });
-
-        if (releasesWithStreams.length === 0) {
-            return [];
-        }
 
         const latestRelease = releasesWithStreams.reduce((latest, current) => {
             const latestDate = latest.releaseDate.year * 52 + latest.releaseDate.week;
@@ -120,6 +131,26 @@ const SpotifyView: React.FC = () => {
         }
         return null;
     }, [artistPick, songs, releases]);
+
+    const upcomingReleases = useMemo(() => {
+        if (!labelSubmissions) return [];
+        
+        const toTotalWeeks = (d: GameDate) => d.year * 52 + d.week;
+        const nowTotalWeeks = toTotalWeeks(date);
+    
+        return labelSubmissions
+            .filter(sub => 
+                sub.status === 'scheduled' && 
+                sub.hasCountdownPage &&
+                sub.projectReleaseDate &&
+                toTotalWeeks(sub.projectReleaseDate) > nowTotalWeeks
+            )
+            .map(sub => ({
+                release: sub.release,
+                releaseDate: sub.projectReleaseDate!
+            }))
+            .sort((a, b) => toTotalWeeks(a.releaseDate) - toTotalWeeks(b.releaseDate));
+    }, [labelSubmissions, date]);
 
     const navigateTo = (newView: 'profile' | 'discography' | 'releaseDetail') => {
         if (newView !== view) {
@@ -272,6 +303,28 @@ const SpotifyView: React.FC = () => {
                             <button onClick={handleShowDiscography} className="px-6 py-2 border border-zinc-400 rounded-full text-sm font-semibold hover:border-white hover:scale-105 transition-transform">
                                 See discography
                             </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Upcoming Releases */}
+                {upcomingReleases.length > 0 && (
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-2xl font-bold">Upcoming</h2>
+                        </div>
+                        <div className="space-y-4">
+                            {upcomingReleases.map(({ release, releaseDate }) => (
+                                <UpcomingReleaseItem 
+                                    key={release.id} 
+                                    release={release} 
+                                    releaseDate={releaseDate} 
+                                    onClick={() => {
+                                        dispatch({ type: 'SELECT_RELEASE', payload: release.id });
+                                        dispatch({ type: 'CHANGE_VIEW', payload: 'spotifyAlbumCountdown' });
+                                    }}
+                                />
+                            ))}
                         </div>
                     </div>
                 )}

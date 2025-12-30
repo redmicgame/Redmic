@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import { Email, GeniusOffer, FallonOffer, PopBaseOffer } from '../types';
@@ -17,6 +18,7 @@ import VogueIcon from './icons/VogueIcon';
 import UserIcon from './icons/UserIcon';
 import OnTheRadarIcon from './icons/OnTheRadarIcon';
 import TrshdIcon from './icons/TrshdIcon';
+import OscarAwardIcon from './icons/OscarAwardIcon';
 
 const SenderAvatar: React.FC<{ email: Email }> = ({ email }) => {
     const { sender, senderIcon } = email;
@@ -77,6 +79,13 @@ const SenderAvatar: React.FC<{ email: Email }> = ({ email }) => {
         return (
             <div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center">
                 <TrophyIcon className="w-6 h-6 text-black" />
+            </div>
+        )
+    }
+    if (senderIcon === 'oscars') {
+        return (
+            <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                <OscarAwardIcon className="w-6 h-6 text-amber-400" />
             </div>
         )
     }
@@ -178,6 +187,14 @@ const EmailDetailView: React.FC<{ email: Email; onBack: () => void }> = ({ email
             case 'grammyRedCarpet':
                 dispatch({ type: 'ACCEPT_GRAMMY_RED_CARPET', payload: { emailId: email.id, lookUrl: '' } }); // Will be handled by the view
                 break;
+            case 'oscarSubmission':
+                dispatch({ type: 'GO_TO_OSCAR_SUBMISSIONS', payload: { emailId: email.id } });
+                break;
+            case 'oscarNominations':
+                if (email.offer.hasPerformanceOffer) {
+                    dispatch({ type: 'ACCEPT_OSCAR_PERFORMANCE', payload: { emailId: email.id } });
+                }
+                break;
             case 'onlyfansRequest':
                 dispatch({ type: 'ACCEPT_ONLYFANS_REQUEST', payload: { emailId: email.id, payout: email.offer.payout } });
                 break;
@@ -270,6 +287,22 @@ const EmailDetailView: React.FC<{ email: Email; onBack: () => void }> = ({ email
                 buttonClass = "bg-red-500 hover:bg-red-600 text-white shadow-red-500/20";
                 acceptedText = "You are attending the GRAMMYs";
                 isAccepted = !!email.offer.isAttending;
+                break;
+            case 'oscarSubmission':
+                buttonText = "Submit For Oscars";
+                buttonClass = "bg-amber-400 hover:bg-amber-500 text-black shadow-amber-400/20";
+                acceptedText = "Submissions Sent";
+                isAccepted = email.offer.isSubmitted;
+                break;
+            case 'oscarNominations':
+                if (email.offer.hasPerformanceOffer) {
+                    buttonText = "Accept Oscars Performance";
+                    buttonClass = "bg-amber-400 hover:bg-amber-500 text-black shadow-amber-400/20";
+                    acceptedText = "Performance Accepted";
+                    isAccepted = !!email.offer.isPerformanceAccepted;
+                } else {
+                    isActionable = false;
+                }
                 break;
             case 'onlyfansRequest':
                 buttonText = `Accept Request ($${formatNumber(email.offer.payout)})`;

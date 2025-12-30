@@ -1,16 +1,11 @@
 
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import ChevronDownIcon from './icons/ChevronDownIcon';
 import StarIcon from './icons/StarIcon';
 import FireIcon from './icons/FireIcon';
 import { Artist, Group, LabelSubmission, Song } from '../types';
 import ChevronRightIcon from './icons/ChevronRightIcon';
-import DollarIcon from './icons/DollarIcon';
-import MegaphoneIcon from './icons/MegaphoneIcon';
-import MicrophoneIcon from './icons/MicrophoneIcon';
-import YouTubeIcon from './icons/YouTubeIcon';
 
 const QualityBadge: React.FC<{ quality: number; showNumber: boolean }> = ({ quality, showNumber }) => {
     const getQualityColor = () => {
@@ -79,15 +74,57 @@ const SubmissionItem: React.FC<{ submission: LabelSubmission }> = ({ submission 
     );
 };
 
+const RegionalPopularityBar: React.FC<{ region: string; score: number; color: string }> = ({ region, score, color }) => (
+    <div>
+        <div className="flex justify-between items-baseline text-sm">
+            <p className="font-semibold text-zinc-300">{region}</p>
+            <p className="font-mono text-zinc-400">{score.toFixed(0)}/100</p>
+        </div>
+        <div className="w-full bg-zinc-700 rounded-full h-2 mt-1">
+            <div className={`h-2 rounded-full ${color}`} style={{ width: `${score}%` }}></div>
+        </div>
+    </div>
+);
+
 
 const HomeTab: React.FC = () => {
     const { gameState, dispatch, activeArtist, activeArtistData, allPlayerArtists } = useGame();
     const { date, careerMode, activeArtistId } = gameState;
     const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+    const [isPopularityExpanded, setIsPopularityExpanded] = useState(false);
 
     if (!activeArtistData || !activeArtist) return null;
     
     const { money, hype, popularity, songs, labelSubmissions, contract, redMicPro } = activeArtistData;
+
+    const regionalScores = useMemo(() => {
+        const base = popularity;
+        const regions = ['US', 'Canada', 'Latin America', 'Asia', 'UK'];
+        const scores: { region: string, score: number }[] = [];
+        let scoreSum = 0;
+
+        for (let i = 0; i < regions.length - 1; i++) {
+            const variance = (Math.random() - 0.5) * 20; // -10 to +10 variance
+            let score = base + variance;
+            if ((activeArtist as Artist).country === regions[i]) {
+                score += 5; // Home country boost
+            }
+            score = Math.max(0, Math.min(100, score));
+            scores.push({ region: regions[i], score });
+            scoreSum += score;
+        }
+
+        // Adjust the last region to make the average roughly equal to the base popularity
+        const lastRegion = regions[regions.length - 1];
+        let lastScore = (base * regions.length) - scoreSum;
+         if ((activeArtist as Artist).country === lastRegion) {
+            lastScore += 5;
+        }
+        lastScore = Math.max(0, Math.min(100, lastScore));
+        scores.push({ region: lastRegion, score: lastScore });
+
+        return scores.sort((a, b) => b.score - a.score);
+    }, [popularity, activeArtist]);
 
     const getWeekDate = (d: { week: number; year: number; }) => {
          const date = new Date(d.year, 0, (d.week - 1) * 7 + 1);
@@ -148,18 +185,33 @@ const HomeTab: React.FC = () => {
             
             <div>
                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                        <div className="flex items-center gap-2">
-                            <StarIcon className="w-5 h-5 text-yellow-400" />
-                            <h2 className="text-xl font-bold">Popularity</h2>
+                    <button onClick={() => setIsPopularityExpanded(!isPopularityExpanded)} className="w-full text-left">
+                        <div className="flex justify-between items-center mb-1">
+                            <div className="flex items-center gap-2">
+                                <StarIcon className="w-5 h-5 text-yellow-400" />
+                                <h2 className="text-xl font-bold">Popularity</h2>
+                                <ChevronDownIcon className={`w-5 h-5 text-zinc-400 transition-transform ${isPopularityExpanded ? 'rotate-180' : ''}`} />
+                            </div>
+                            <span className="font-bold text-lg">{Math.round(popularity)}/100</span>
                         </div>
-                        <span className="font-bold text-lg">{Math.round(popularity)}/100</span>
-                    </div>
+                    </button>
                     <div className="w-full bg-zinc-700 rounded-full h-4 overflow-hidden">
                         <div 
                             className={`bg-gradient-to-r ${getPopularityColor(popularity)} h-4 rounded-full transition-all duration-500 ease-out`} 
                             style={{ width: widthPercentagePopularity }}
                         ></div>
+                    </div>
+                    <div 
+                        className="grid transition-all duration-300 ease-in-out overflow-hidden"
+                        style={{ gridTemplateRows: isPopularityExpanded ? '1fr' : '0fr' }}
+                    >
+                        <div className="min-h-0">
+                            <div className="bg-zinc-800/50 p-3 mt-2 rounded-lg space-y-2">
+                                {regionalScores.map(item => (
+                                    <RegionalPopularityBar key={item.region} region={item.region} score={item.score} color={getPopularityColor(item.score).replace('from-', 'bg-').split(' ')[0]} />
+                                ))}
+                            </div>
+                        </div>
                     </div>
                     <p className="text-xs text-zinc-400 mt-1 text-right">Increases streams, views, sales, and likes.</p>
                 </div>

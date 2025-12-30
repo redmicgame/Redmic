@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import type { Release, Song, GameDate } from '../types';
@@ -10,6 +8,7 @@ import DotsHorizontalIcon from './icons/DotsHorizontalIcon';
 import CameraIcon from './icons/CameraIcon';
 import TrianglePlayIcon from './icons/TrianglePlayIcon';
 import SpotifySnapshotView from './SpotifySnapshotView';
+import SpotifyNowPlayingView from './SpotifyNowPlayingView';
 
 const getDominantColor = (imageUrl: string, onColorReady: (color: string) => void) => {
     const img = new Image();
@@ -71,6 +70,7 @@ const SpotifyReleaseDetailView: React.FC<{ releaseId: string; onBack: () => void
     const [bgColor, setBgColor] = useState('#121212');
     const [showSnapshot, setShowSnapshot] = useState(false);
     const [showStatsModalForSong, setShowStatsModalForSong] = useState<Song | null>(null);
+    const [nowPlayingSong, setNowPlayingSong] = useState<Song | null>(null);
 
     const { releases, songs } = activeArtistData!;
 
@@ -91,6 +91,10 @@ const SpotifyReleaseDetailView: React.FC<{ releaseId: string; onBack: () => void
     const totalDuration = useMemo(() => {
         return releaseSongs.reduce((sum, song) => sum + song.duration, 0);
     }, [releaseSongs]);
+
+    if (nowPlayingSong) {
+        return <SpotifyNowPlayingView song={nowPlayingSong} onBack={() => setNowPlayingSong(null)} />;
+    }
 
     if (!release || !activeArtist) {
         return (
@@ -157,37 +161,48 @@ const SpotifyReleaseDetailView: React.FC<{ releaseId: string; onBack: () => void
 
                     <div className="mt-6 flex items-center justify-between">
                         <div className="flex items-center gap-4 text-zinc-400">
-                             <img src={release.coverArt} alt={release.title} className="w-6 h-6 rounded-sm" />
-                             <PlusCircleIcon className="w-7 h-7 hover:text-white"/>
-                             <DownloadIcon className="w-7 h-7 hover:text-white" />
-                             <DotsHorizontalIcon className="w-7 h-7 hover:text-white" />
+                             <button onClick={() => !release.isTakenDown && releaseSongs.length > 0 && setNowPlayingSong(releaseSongs[0])} disabled={release.isTakenDown}>
+                                <img src={release.coverArt} alt={release.title} className="w-6 h-6 rounded-sm" />
+                             </button>
+                             <PlusCircleIcon className={`w-7 h-7 ${!release.isTakenDown && 'hover:text-white'}`}/>
+                             <DownloadIcon className={`w-7 h-7 ${!release.isTakenDown && 'hover:text-white'}`} />
+                             <DotsHorizontalIcon className={`w-7 h-7 ${!release.isTakenDown && 'hover:text-white'}`} />
                         </div>
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setShowSnapshot(true)} className="p-1">
-                                <CameraIcon className="w-7 h-7 text-zinc-400 hover:text-white" />
+                            <button onClick={() => !release.isTakenDown && setShowSnapshot(true)} disabled={release.isTakenDown} className="p-1">
+                                <CameraIcon className={`w-7 h-7 text-zinc-400 ${!release.isTakenDown && 'hover:text-white'}`} />
                             </button>
-                            <button className="bg-green-500 rounded-full w-14 h-14 flex items-center justify-center shadow-lg shadow-green-500/30">
-                               <TrianglePlayIcon className="w-7 h-7 text-black" />
+                            <button 
+                                className={`rounded-full w-14 h-14 flex items-center justify-center shadow-lg ${release.isTakenDown ? 'bg-zinc-700' : 'bg-green-500 shadow-green-500/30'}`}
+                                disabled={release.isTakenDown}
+                            >
+                               <TrianglePlayIcon className={`w-7 h-7 ${release.isTakenDown ? 'text-zinc-500' : 'text-black'}`} />
                             </button>
                         </div>
                     </div>
                     
-                    <div className="mt-6 space-y-4">
-                        {releaseSongs.map(song => (
-                            <div key={song.id} className="flex items-center">
-                                <div className="flex-grow">
-                                    <p className="font-semibold">{song.title}</p>
-                                    <div className="flex items-center gap-2">
-                                        {song.explicit && <span className="text-xs w-4 h-4 bg-zinc-600/80 text-zinc-300 font-bold rounded-sm flex items-center justify-center">E</span>}
-                                        <p className="text-sm text-zinc-400">{activeArtist.name}</p>
+                    {release.isTakenDown ? (
+                        <div className="mt-6 text-center py-8">
+                            <p className="text-zinc-400">The tracks on this release are not available.</p>
+                        </div>
+                    ) : (
+                        <div className="mt-6 space-y-4">
+                            {releaseSongs.map(song => (
+                                <div key={song.id} className="flex items-center">
+                                    <div className="flex-grow">
+                                        <p className="font-semibold">{song.title}</p>
+                                        <div className="flex items-center gap-2">
+                                            {song.explicit && <span className="text-xs w-4 h-4 bg-zinc-600/80 text-zinc-300 font-bold rounded-sm flex items-center justify-center">E</span>}
+                                            <p className="text-sm text-zinc-400">{activeArtist.name}</p>
+                                        </div>
                                     </div>
+                                    <button onClick={(e) => { e.stopPropagation(); setShowStatsModalForSong(song); }} className="p-2 -m-2">
+                                     <DotsHorizontalIcon className="w-5 h-5 text-zinc-400" />
+                                    </button>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); setShowStatsModalForSong(song); }} className="p-2 -m-2">
-                                 <DotsHorizontalIcon className="w-5 h-5 text-zinc-400" />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="mt-6 text-sm text-zinc-400 space-y-4">
                         <p>{formatGameDate(release.releaseDate)}</p>

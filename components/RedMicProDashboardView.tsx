@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import { Song, Label, XUser } from '../types';
@@ -83,6 +82,8 @@ const RedMicProDashboardView: React.FC = () => {
     const [newBoost, setNewBoost] = useState(salesBoost);
     const [newHype, setNewHype] = useState(hype);
     const [newPopularity, setNewPopularity] = useState(popularity);
+    const [adminCode, setAdminCode] = useState('');
+    const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
     const hypeMode = redMicPro.hypeMode || 'locked';
 
     const unreleasedSongs = songs.filter(s => !s.isReleased);
@@ -94,6 +95,12 @@ const RedMicProDashboardView: React.FC = () => {
         !user.id.startsWith('charts_') &&
         !user.id.startsWith('stats_')
     );
+
+    const handleAdminUnlock = () => {
+        if (adminCode.toLowerCase() === 'queenlayabtch') {
+            setIsAdminUnlocked(true);
+        }
+    };
 
     return (
         <div className="h-screen w-full bg-zinc-900 overflow-y-auto">
@@ -265,6 +272,30 @@ const RedMicProDashboardView: React.FC = () => {
                             </button>
                         ))}
                     </div>
+                </div>
+                <div className="bg-zinc-900/50 border-2 border-purple-500/30 p-4 rounded-lg space-y-3">
+                    <h2 className="text-lg font-bold text-purple-400">Admin Panel</h2>
+                    {isAdminUnlocked ? (
+                        <div className="text-center py-4">
+                            <p className="text-zinc-300">Admin features coming soon.</p>
+                        </div>
+                    ) : (
+                        <div className="flex gap-2">
+                            <input 
+                                type="password" 
+                                value={adminCode} 
+                                onChange={e => setAdminCode(e.target.value)} 
+                                placeholder="Enter secret code..."
+                                className="w-full bg-zinc-700 p-2 rounded-md"
+                            />
+                            <button 
+                                onClick={handleAdminUnlock} 
+                                className="bg-purple-600 hover:bg-purple-700 font-bold px-4 rounded-md"
+                            >
+                                Unlock
+                            </button>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

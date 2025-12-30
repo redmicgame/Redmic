@@ -51,6 +51,79 @@ export const generateWeeklyXContent = (
     const { date } = gameState;
     const { artistImages, artistVideoThumbnails, releases, streamsRemovedThisWeek, paparazziPhotos, tours, voguePhotoshoots, songs, tourPhotos } = artistData;
 
+    // --- GRAMMY PREDICTION POST (WEEK 50) ---
+    if (date.week === 50) {
+        const chartDataUser = artistData.xUsers.find(u => u.id === 'chartdata');
+        if (chartDataUser) {
+            const categories: Array<{
+                name: 'Record of the Year' | 'Song of the Year' | 'Album of the Year' | 'Best New Artist';
+                getContenders: () => Array<{ name: string; artist: string; image?: string }>;
+            }> = [
+                {
+                    name: 'Record of the Year',
+                    getContenders: () => gameState.billboardHot100.slice(0, 5).map(s => ({ name: s.title, artist: s.artist, image: s.coverArt }))
+                },
+                {
+                    name: 'Song of the Year',
+                    getContenders: () => gameState.billboardHot100.slice(0, 5).map(s => ({ name: s.title, artist: s.artist, image: s.coverArt }))
+                },
+                {
+                    name: 'Album of the Year',
+                    getContenders: () => gameState.billboardTopAlbums.slice(0, 5).map(a => ({ name: a.title, artist: a.artist, image: a.coverArt }))
+                },
+                {
+                    name: 'Best New Artist',
+                    getContenders: () => {
+                        const bnaNpcs = ['Sabrina Carpenter', 'Tate McRae', 'Chappell Roan', 'Ice Spice', 'Zach Bryan'];
+                        const contenders = bnaNpcs.map(name => {
+                            const song = gameState.billboardHot100.find(s => s.artist === name);
+                            const album = gameState.billboardTopAlbums.find(a => a.artist === name);
+                            return {
+                                name: name,
+                                artist: name,
+                                image: song?.coverArt || album?.coverArt
+                            };
+                        }).filter((c): c is { name: string; artist: string; image: string } => !!c.image);
+                        return contenders;
+                    }
+                }
+            ];
+
+            for (const categoryToPost of categories) {
+                const contenders = categoryToPost.getContenders();
+
+                if (contenders.length >= 2) {
+                    const predictedWinner = contenders[0];
+                    const shouldWinIndex = Math.floor(Math.random() * (contenders.length - 1)) + 1;
+                    const shouldWin = contenders[shouldWinIndex];
+                    
+                    if(predictedWinner && shouldWin) {
+                        const formatContender = (contender: { name: string; artist: string; image?: string }) => {
+                            if (categoryToPost.name === 'Best New Artist') {
+                                return contender.artist;
+                            }
+                            return `${contender.artist}'s "${contender.name}"`;
+                        };
+
+                        const content = `Rolling Stone predicts ${formatContender(predictedWinner)} will win '${categoryToPost.name}' at this year's #GRAMMYs.\n\nThe publication states ${formatContender(shouldWin)} "should" win.`;
+
+                        newPosts.push({
+                            id: crypto.randomUUID(),
+                            authorId: chartDataUser.id,
+                            content,
+                            image: shouldWin.image,
+                            likes: Math.floor(Math.random() * 25000) + 10000,
+                            retweets: Math.floor(Math.random() * 6000) + 2000,
+                            views: Math.floor(Math.random() * 600000) + 200000,
+                            date
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+
     // --- UNRELEASED SONG TOUR DEBUT TWEET ---
     const activeTour = tours.find(t => t.status === 'active' && t.currentVenueIndex === 1);
     if (activeTour) {

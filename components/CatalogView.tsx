@@ -79,7 +79,7 @@ interface TrackItemProps {
 
 const TrackItem: React.FC<TrackItemProps> = ({ song, chartInfo, isExpanded, onToggleExpand, grammyWin }) => {
     return (
-        <div className="bg-zinc-800/50 p-2 rounded-lg">
+        <div className={`bg-zinc-800/50 p-2 rounded-lg ${song.isTakenDown ? 'opacity-60' : ''}`}>
             <div className="flex items-center gap-3">
                 <img src={song.coverArt} alt={song.title} className="w-10 h-10 rounded-sm object-cover" />
                 <div className="flex-grow">
@@ -213,8 +213,10 @@ const CatalogView: React.FC = () => {
                                     current: albumChartEntry?.rank ?? null,
                                 };
                                 const grammyWin = findGrammyWin(project.id, 'album');
+                                const isTakenDown = project.isTakenDown;
                                 return (
-                                    <div key={project.id} className="bg-zinc-800 p-3 rounded-lg">
+                                    <div key={project.id} className={`bg-zinc-800 p-3 rounded-lg relative ${isTakenDown ? 'opacity-50' : ''}`}>
+                                        {isTakenDown && <div className="absolute top-2 right-2 text-xs font-bold bg-red-900/80 text-red-400 px-2 py-1 rounded-full z-10">TAKEN DOWN</div>}
                                         <div className="flex items-center gap-4">
                                             <label htmlFor={`cover-upload-${project.id}`} className="cursor-pointer group relative flex-shrink-0">
                                                 <img src={project.coverArt} alt={project.title} className="w-20 h-20 rounded-md object-cover"/>
@@ -297,8 +299,10 @@ const CatalogView: React.FC = () => {
                                     current: billboardHot100.find(e => e.songId === song.id)?.rank ?? null
                                 };
                                 const grammyWin = findGrammyWin(song.id, 'song');
+                                const isTakenDown = song.isTakenDown;
                                 return (
-                                    <div key={song.id} className="bg-zinc-800 p-3 rounded-lg flex items-center gap-4">
+                                    <div key={song.id} className={`bg-zinc-800 p-3 rounded-lg flex items-center gap-4 relative ${isTakenDown ? 'opacity-50' : ''}`}>
+                                        {isTakenDown && <div className="absolute top-2 right-2 text-xs font-bold bg-red-900/80 text-red-400 px-2 py-1 rounded-full z-10">TAKEN DOWN</div>}
                                         <label htmlFor={`cover-upload-${song.releaseId}`} className="cursor-pointer group relative flex-shrink-0">
                                             <img src={song.coverArt} alt={song.title} className="w-20 h-20 rounded-md object-cover"/>
                                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
