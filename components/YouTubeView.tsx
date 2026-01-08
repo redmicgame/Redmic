@@ -14,15 +14,21 @@ import UserGroupIcon from './icons/UserGroupIcon';
 import YouTubeIcon from './icons/YouTubeIcon';
 
 const formatTimeAgo = (releaseDate: { week: number, year: number }, currentDate: { week: number, year: number }): string => {
-    const yearsAgo = currentDate.year - releaseDate.year;
-    if (yearsAgo > 1) return `${yearsAgo} years ago`;
-    if (yearsAgo === 1) return `1 year ago`;
-    
     const weeksAgo = (currentDate.year * 52 + currentDate.week) - (releaseDate.year * 52 + releaseDate.week);
-    if (weeksAgo > 4) return `${Math.floor(weeksAgo / 4)} months ago`;
-    if (weeksAgo > 1) return `${weeksAgo} weeks ago`;
+
+    if (weeksAgo <= 0) return 'Just now';
     if (weeksAgo === 1) return `1 week ago`;
-    return 'Just now';
+    if (weeksAgo < 4) return `${weeksAgo} weeks ago`;
+
+    if (weeksAgo < 52) {
+        const monthsAgo = Math.floor(weeksAgo / 4);
+        if (monthsAgo === 1) return `1 month ago`;
+        return `${monthsAgo} months ago`;
+    }
+
+    const yearsAgo = Math.floor(weeksAgo / 52);
+    if (yearsAgo === 1) return `1 year ago`;
+    return `${yearsAgo} years ago`;
 };
 
 const VideoItem: React.FC<{

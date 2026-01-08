@@ -8,18 +8,12 @@ import PlayRedCircleIcon from './icons/PlayRedCircleIcon';
 import ChevronRightIcon from './icons/ChevronRightIcon';
 import { Song, Release, Video, GameDate } from '../types';
 import PlusIcon from './icons/PlusIcon';
+import LosslessIcon from './icons/LosslessIcon';
 
 const formatDateApple = (gameDate: GameDate) => {
     const date = new Date(gameDate.year, 0, (gameDate.week - 1) * 7 + 1);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
 };
-
-const ActionButton: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
-    <button className="bg-zinc-800/80 hover:bg-zinc-700/80 transition-colors rounded-lg flex-1 py-3 flex items-center justify-center gap-2">
-        {icon}
-        <span className="font-semibold">{label}</span>
-    </button>
-);
 
 const AppleMusicReleaseDetailView: React.FC<{ releaseId: string; onBack: () => void; onSelectRelease: (id: string) => void }> = ({ releaseId, onBack, onSelectRelease }) => {
     const { activeArtist, activeArtistData } = useGame();
@@ -59,12 +53,23 @@ const AppleMusicReleaseDetailView: React.FC<{ releaseId: string; onBack: () => v
     const releaseSongs = release.songIds.map(id => songs.find(s => s.id === id)).filter((s): s is Song => !!s);
     const totalDuration = Math.round(releaseSongs.reduce((sum, s) => sum + s.duration, 0) / 60);
 
+    const isSingle = release.type === 'Single';
+    const singleSong = isSingle ? releaseSongs[0] : null;
+
+    const artistDisplay = (isSingle && singleSong && singleSong.collaboration)
+        ? `${activeArtist.name} & ${singleSong.collaboration.artistName}`
+        : activeArtist.name;
+    
+    const releaseTitle = (isSingle && singleSong && singleSong.collaboration)
+        ? release.title.replace(` (feat. ${singleSong.collaboration.artistName})`, '')
+        : release.title;
+
     return (
         <>
             {isReviewExpanded && release.review && (
                 <div className="fixed inset-0 bg-black/90 z-50 p-4 flex flex-col">
                     <div className="flex justify-between items-center pb-4">
-                        <h2 className="font-bold text-lg">{release.title}</h2>
+                        <h2 className="font-bold text-lg">{releaseTitle}</h2>
                         <button onClick={() => setIsReviewExpanded(false)} className="font-bold text-rose-400">Done</button>
                     </div>
                     <div className="flex-grow overflow-y-auto text-zinc-300 leading-relaxed text-lg">
@@ -75,7 +80,7 @@ const AppleMusicReleaseDetailView: React.FC<{ releaseId: string; onBack: () => v
             {isDescriptionExpanded && (
                 <div className="fixed inset-0 bg-black/90 z-50 p-4 flex flex-col">
                     <div className="flex justify-between items-center pb-4">
-                        <h2 className="font-bold text-lg">{release.title}</h2>
+                        <h2 className="font-bold text-lg">{releaseTitle}</h2>
                         <button onClick={() => setIsDescriptionExpanded(false)} className="font-bold text-rose-400">Done</button>
                     </div>
                     <div className="flex-grow overflow-y-auto text-zinc-300 leading-relaxed text-lg">
@@ -87,7 +92,7 @@ const AppleMusicReleaseDetailView: React.FC<{ releaseId: string; onBack: () => v
             <div className="bg-black text-white min-h-screen">
                 <header className="sticky top-0 bg-black/80 backdrop-blur-md z-10 p-4 flex justify-between items-center">
                     <button onClick={onBack}><ChevronLeftIcon className="w-7 h-7" /></button>
-                    <h1 className="font-bold text-center truncate">{release.title}</h1>
+                    <h1 className="font-bold text-center truncate">{releaseTitle}</h1>
                     <div className="flex items-center gap-4">
                         <button><PlusIcon className="w-6 h-6" /></button>
                         <button><DotsHorizontalIcon className="w-6 h-6" /></button>
@@ -96,12 +101,28 @@ const AppleMusicReleaseDetailView: React.FC<{ releaseId: string; onBack: () => v
                 <main className="p-4 space-y-8">
                     <section className="text-center">
                         <img src={release.coverArt} className="w-56 h-56 rounded-lg object-cover mx-auto shadow-2xl shadow-black" />
-                        <h2 className="text-2xl font-bold mt-4">{release.title}</h2>
-                        <p className="text-xl text-rose-400 font-semibold">{activeArtist.name}</p>
-                        <p className="text-sm text-zinc-400 uppercase mt-1">{release.type} • {release.releaseDate.year}</p>
-                        <div className="flex gap-2 mt-4">
-                            <ActionButton icon={<svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-rose-400"><path d="M7 6v12l10-6z" /></svg>} label="Play" />
-                            <ActionButton icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5 text-rose-400"><path d="M16 3h5v5M4 20L20 4M20 16v5h-5M4 4l5 5" /></svg>} label="Shuffle" />
+                        <h2 className="text-2xl font-bold mt-4">{releaseTitle}</h2>
+                        <p className="text-xl text-rose-400 font-semibold">{artistDisplay}</p>
+                        <p className="text-sm text-zinc-400 uppercase mt-1 flex items-center justify-center gap-2">
+                            <span>{releaseSongs[0]?.genre}</span>
+                            <span>•</span>
+                            <span>{release.releaseDate.year}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                                <LosslessIcon className="w-5 h-5" /> Lossless
+                            </span>
+                        </p>
+                        <div className="flex gap-3 mt-4">
+                            <button className="bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-xl flex-1 py-2.5 flex items-center justify-center gap-2">
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-rose-500"><path d="M7 6v12l10-6z" /></svg>
+                                <span className="font-semibold text-white">Play</span>
+                            </button>
+                            <button className="bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-xl flex-1 py-2.5 flex items-center justify-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 3l4 4m0 0l-4 4m4-4H4m12 14l4-4m0 0l-4-4m4 4H4" />
+                                </svg>
+                                <span className="font-semibold text-white">Shuffle</span>
+                            </button>
                         </div>
                     </section>
 
@@ -116,16 +137,28 @@ const AppleMusicReleaseDetailView: React.FC<{ releaseId: string; onBack: () => v
                     )}
 
                     <section>
-                        {releaseSongs.map((song, index) => (
-                            <div key={song.id} className="flex items-center gap-3 py-2 border-b border-zinc-800">
-                                <span className="w-6 text-zinc-400 text-center">{index + 1}</span>
-                                <div className="flex-grow min-w-0">
-                                    <p className="font-semibold truncate">{song.title}</p>
+                        {releaseSongs.map((song, index) => {
+                            const songTitle = song.title.replace(/\s*\(feat\..*\)/i, '');
+                            const artistForSong = song.collaboration
+                                ? `${activeArtist.name} & ${song.collaboration.artistName}`
+                                : null;
+
+                            return (
+                                <div key={song.id} className="flex items-start gap-3 py-3 border-b border-zinc-800">
+                                    <span className="w-6 text-zinc-400 text-center pt-1">{index + 1}</span>
+                                    <div className="flex-grow min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-semibold truncate text-white">{songTitle}</p>
+                                            {song.explicit && <span className="text-xs w-4 h-4 bg-zinc-700 text-zinc-400 font-bold rounded-sm flex items-center justify-center flex-shrink-0">E</span>}
+                                        </div>
+                                        {artistForSong && (
+                                            <p className="text-sm text-zinc-400 truncate">{artistForSong}</p>
+                                        )}
+                                    </div>
+                                    <button className="flex-shrink-0 pt-1"><DotsHorizontalIcon className="w-5 h-5 text-zinc-400" /></button>
                                 </div>
-                                {song.explicit && <span className="text-xs w-4 h-4 bg-zinc-700 text-zinc-400 font-bold rounded-sm flex items-center justify-center flex-shrink-0">E</span>}
-                                <button className="flex-shrink-0"><DotsHorizontalIcon className="w-5 h-5 text-zinc-400" /></button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </section>
                     
                     <section className="text-xs text-zinc-400 space-y-1">
@@ -172,7 +205,7 @@ const HorizontalSection: React.FC<{title: string, items: (Release | Video)[], on
                                 <span className="truncate">{item.title}</span>
                                 {isExplicit && <span className="ml-2 text-xs w-4 h-4 bg-zinc-700/80 text-zinc-300 font-bold rounded-sm flex items-center justify-center flex-shrink-0">E</span>}
                             </div>
-                            <p className="text-sm text-zinc-400">{isVideos ? artistName : item.releaseDate.year}</p>
+                            <p className="text-sm text-zinc-400">{isVideos ? artistName : ('releaseDate' in item && item.releaseDate.year)}</p>
                         </button>
                     );
                 })}
@@ -273,15 +306,27 @@ const AppleMusicView: React.FC = () => {
                         <div className="divide-y divide-zinc-800">
                             {topSongs.map((song) => {
                                 const release = releases.find(r => r.id === song.releaseId);
+                                const songTitle = song.collaboration
+                                    ? song.title.replace(` (feat. ${song.collaboration.artistName})`, '')
+                                    : song.title;
+                                
+                                let subTitle = '';
+                                if (release) {
+                                    if (release.type === 'Single') {
+                                        subTitle = 'Single';
+                                    } else {
+                                        subTitle = `${release.title} • ${release.releaseDate.year}`;
+                                    }
+                                }
+
                                 return (
                                     <div key={song.id} className="flex items-center gap-3 py-2">
-                                        <img src={song.coverArt} className="w-12 h-12 rounded-md object-cover" alt={song.title} />
+                                        <img src={song.coverArt} className="w-12 h-12 rounded-md object-cover" alt={songTitle} />
                                         <div className="flex-grow min-w-0">
-                                            <p className="font-semibold truncate">{song.title}</p>
-                                            <p className="text-sm text-zinc-400 truncate">{release?.title || activeArtist.name} • {release?.releaseDate.year}</p>
+                                            <p className="font-semibold truncate">{songTitle}</p>
+                                            <p className="text-sm text-zinc-400 truncate">{subTitle}</p>
                                         </div>
                                         <button className="flex-shrink-0"><DotsHorizontalIcon className="w-5 h-5 text-zinc-400" /></button>
-                                        <img src={activeArtist.image} className="w-12 h-12 rounded-md object-cover flex-shrink-0" alt={activeArtist.name} />
                                     </div>
                                 );
                             })}

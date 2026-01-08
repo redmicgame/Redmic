@@ -1,9 +1,12 @@
-
 import React, { useState, useMemo } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import ArrowLeftIcon from './icons/ArrowLeftIcon';
 import { Song, Release, Video } from '../types';
 import ChevronDownIcon from './icons/ChevronDownIcon';
+import InformationCircleIcon from './icons/InformationCircleIcon';
+import WikipediaIcon from './icons/WikipediaIcon';
+import GrammyAwardIcon from './icons/GrammyAwardIcon';
+import ChartBarIcon from './icons/ChartBarIcon';
 
 const AchievementCard: React.FC<{ title: string; children: React.ReactNode; accentColorClass?: string }> = ({ title, children, accentColorClass = 'text-zinc-400 border-zinc-700' }) => (
     <div className={`bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 rounded-xl border ${accentColorClass.replace('text-', 'border-')}/30 shadow-lg`}>
@@ -59,7 +62,7 @@ const ExpandableList: React.FC<{
                     <ChevronDownIcon className={`w-4 h-4 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </button>
             )}
-        </>
+        </div>
     );
 };
 
@@ -82,7 +85,7 @@ const AchievementsView: React.FC = () => {
         .sort((a, b) => (b.firstWeekStreams ?? 0) - (a.firstWeekStreams ?? 0)), [songs]);
 
     const topAlbumsFirstWeek = useMemo(() => releases
-        .filter(r => (r.type === 'Album' || r.type === 'EP') && typeof r.firstWeekStreams === 'number')
+        .filter(r => (r.type === 'Album' || r.type === 'EP' || r.type === 'Album (Deluxe)') && typeof r.firstWeekStreams === 'number')
         .sort((a, b) => (b.firstWeekStreams ?? 0) - (a.firstWeekStreams ?? 0)), [releases]);
         
     const topVideosFirstWeek = useMemo(() => videos
@@ -136,7 +139,7 @@ const AchievementsView: React.FC = () => {
                 <AchievementCard title="Top First Week Streams" accentColorClass="text-green-400">
                     <ExpandableList 
                         items={topSongsFirstWeek} 
-                        getValue={(item) => item.firstWeekStreams} 
+                        getValue={(item) => item.firstWeekStreams ?? 0} 
                         emptyMessage="No songs with first week data yet." 
                     />
                 </AchievementCard>
@@ -144,7 +147,7 @@ const AchievementsView: React.FC = () => {
                 <AchievementCard title="Top First Week Album/EP Streams" accentColorClass="text-green-400">
                     <ExpandableList 
                         items={topAlbumsFirstWeek} 
-                        getValue={(item) => item.firstWeekStreams} 
+                        getValue={(item) => item.firstWeekStreams ?? 0} 
                         emptyMessage="No projects with first week data yet." 
                     />
                 </AchievementCard>
@@ -152,7 +155,7 @@ const AchievementsView: React.FC = () => {
                 <AchievementCard title="Top First Week Video Views" accentColorClass="text-red-400">
                     <ExpandableList 
                         items={topVideosFirstWeek} 
-                        getValue={(item) => item.firstWeekViews} 
+                        getValue={(item) => item.firstWeekViews ?? 0} 
                         emptyMessage="No videos with first week data yet." 
                     />
                 </AchievementCard>
@@ -160,7 +163,7 @@ const AchievementsView: React.FC = () => {
                 <AchievementCard title="Most Fraudulent Songs" accentColorClass="text-yellow-400">
                     <ExpandableList 
                         items={topFraudulentSongs} 
-                        getValue={(item) => item.removedStreams} 
+                        getValue={(item) => item.removedStreams ?? 0} 
                         emptyMessage="No songs have had artificial streams removed yet." 
                     />
                 </AchievementCard>

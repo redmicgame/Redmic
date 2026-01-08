@@ -174,15 +174,20 @@ const YouTubeVideoDetailView: React.FC = () => {
 
     const likes = Math.floor(video.views * 0.01);
     const timeAgo = (releaseDate: { week: number, year: number }, currentDate: { week: number, year: number }): string => {
-        const yearsAgo = currentDate.year - releaseDate.year;
-        if (yearsAgo > 1) return `${yearsAgo} years ago`;
-        if (yearsAgo === 1) return `1 year ago`;
-        
         const weeksAgo = (currentDate.year * 52 + currentDate.week) - (releaseDate.year * 52 + releaseDate.week);
-        if (weeksAgo > 4) return `${Math.floor(weeksAgo / 4)}mo ago`;
-        if (weeksAgo > 1) return `${weeksAgo}w ago`;
+    
+        if (weeksAgo <= 0) return 'Just now';
         if (weeksAgo === 1) return `1w ago`;
-        return 'Just now';
+        if (weeksAgo < 4) return `${weeksAgo}w ago`;
+    
+        if (weeksAgo < 52) {
+            const monthsAgo = Math.floor(weeksAgo / 4);
+            return `${monthsAgo}mo ago`;
+        }
+    
+        const yearsAgo = Math.floor(weeksAgo / 52);
+        if (yearsAgo === 1) return `1 year ago`;
+        return `${yearsAgo} years ago`;
     };
 
     return (
