@@ -1,5 +1,4 @@
 
-
 import React, { useMemo, useState } from 'react';
 import { useGame, formatNumber } from '../context/GameContext';
 import ArrowLeftIcon from './icons/ArrowLeftIcon';
@@ -44,7 +43,6 @@ const OnlyFansView: React.FC = () => {
             const [year, monthIndex] = key.split('-').map(Number);
             return {
                 label: `${months[monthIndex]}, ${year}`,
-                // FIX: Replaced object spread with explicit assignments to resolve type error.
                 gross: value.gross,
                 net: value.net
             };

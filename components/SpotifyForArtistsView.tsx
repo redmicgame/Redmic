@@ -455,20 +455,16 @@ const S4AAudience: React.FC = () => {
 
 // --- PROFILE TAB ---
 const S4AProfile: React.FC = () => {
-    // FIX: Get gameState from useGame hook to access the current date
     const { dispatch, activeArtistData, gameState } = useGame();
     const [showArtistPickModal, setShowArtistPickModal] = useState(false);
     const [showPitchModal, setShowPitchModal] = useState<Song | null>(null);
 
     if (!activeArtistData) return null;
-    // FIX: Remove 'date' from activeArtistData destructuring
     const { songs, releases, artistPick, money, promotions } = activeArtistData;
-    // FIX: Destructure 'date' from gameState
     const { date } = gameState;
 
 
     const handleSetArtistPick = (itemId: string, itemType: 'song' | 'release') => {
-        // FIX: Add a default message to the payload to satisfy the type requirement.
         dispatch({ type: 'SET_ARTIST_PICK', payload: { itemId, itemType, message: "Check this out!" } });
         setShowArtistPickModal(false);
     };
